@@ -1,10 +1,10 @@
 [
   {
     "email": "kohlzurcher@gmail.com",
-    "stripeCustomerId": "cus_Ty5OqRCsnNMHtx",
-    "stripeSubscriptionId": "sub_1T09EFF5vQ2abbQkaf51EOva",
+    "stripeCustomerId": "cus_Ty5Xufk1KOFkBF",
+    "stripeSubscriptionId": "sub_1T09M1F5vQ2abbQk1oHoxlQc",
     "status": "active",
     "planName": "Sold Iron Subscription",
-    "updatedAt": "2026-02-12T23:23:25.183Z"
+    "updatedAt": "2026-02-12T23:31:27.612Z"
   }
 ]
