@@ -32,10 +32,11 @@ type StripeSubscriptionList = { data?: Array<{ status?: string }> };
 
 export async function hasActiveStripeSubscription(email: string): Promise<boolean> {
   const { secretKey } = getStripeConfig();
-  if (!secretKey || !email) return false;
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!secretKey || !normalizedEmail) return false;
 
   const customerResponse = await fetch(
-    `${stripeApiBase}/customers?email=${encodeURIComponent(email)}&limit=100`,
+    `${stripeApiBase}/customers?email=${encodeURIComponent(normalizedEmail)}&limit=100`,
     {
       method: "GET",
       headers: { Authorization: `Bearer ${secretKey}` },

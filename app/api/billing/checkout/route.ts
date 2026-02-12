@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as { email?: string; plan?: "monthly" | "yearly" };
-    const email = body.email?.trim() ?? "";
+    const email = body.email?.trim().toLowerCase() ?? "";
     const plan = body.plan === "yearly" ? "yearly" : "monthly";
     if (!email) {
       return NextResponse.json({ ok: false, error: "Email is required." }, { status: 400 });
