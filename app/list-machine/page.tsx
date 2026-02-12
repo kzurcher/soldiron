@@ -85,13 +85,24 @@ export default function ListMachinePage() {
         body: payload,
       });
 
-      const result = (await response.json()) as { ok: boolean; error?: string };
+      const result = (await response.json()) as {
+        ok: boolean;
+        error?: string;
+        debug?: { reason?: string; customerCount?: number; statuses?: string[] };
+      };
       if (!response.ok || !result.ok) {
+        const debugText =
+          result.debug
+            ? ` [debug: reason=${result.debug.reason ?? "unknown"}, customers=${
+                result.debug.customerCount ?? 0
+              }, statuses=${(result.debug.statuses ?? []).join("|") || "none"}]`
+            : "";
         setStatus({
           type: "error",
           message:
-            result.error ??
-            "Could not submit your listing request. Ensure your subscription is active.",
+            (result.error ??
+              "Could not submit your listing request. Ensure your subscription is active.") +
+            debugText,
         });
         return;
       }

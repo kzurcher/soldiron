@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { saveListingSubmission, type ListingSubmissionInput } from "@/lib/listing-store";
-import { hasActiveStripeSubscription } from "@/lib/stripe";
+import { getStripeSubscriptionDebug } from "@/lib/stripe";
 
 function normalize(body: Partial<ListingSubmissionInput>): Omit<ListingSubmissionInput, "photoPaths"> {
   return {
@@ -70,12 +70,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error }, { status: 400 });
     }
 
-    const hasActiveSubscription = await hasActiveStripeSubscription(input.email);
-    if (!hasActiveSubscription) {
+    const subscriptionDebug = await getStripeSubscriptionDebug(input.email);
+    if (!subscriptionDebug.active) {
       return NextResponse.json(
         {
           ok: false,
           error: "An active subscription is required to submit listings.",
+          debug: {
+            email: subscriptionDebug.normalizedEmail,
+            reason: subscriptionDebug.reason,
+            customerCount: subscriptionDebug.customerCount,
+            statuses: subscriptionDebug.statuses,
+          },
         },
         { status: 402 }
       );

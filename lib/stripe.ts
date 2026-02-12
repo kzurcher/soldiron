@@ -30,10 +30,35 @@ export async function stripePostForm(
 type StripeCustomerList = { data?: Array<{ id: string }> };
 type StripeSubscriptionList = { data?: Array<{ status?: string }> };
 
-export async function hasActiveStripeSubscription(email: string): Promise<boolean> {
+export type StripeSubscriptionDebug = {
+  active: boolean;
+  normalizedEmail: string;
+  customerCount: number;
+  statuses: string[];
+  reason: string;
+};
+
+export async function getStripeSubscriptionDebug(email: string): Promise<StripeSubscriptionDebug> {
   const { secretKey } = getStripeConfig();
   const normalizedEmail = email.trim().toLowerCase();
-  if (!secretKey || !normalizedEmail) return false;
+  if (!secretKey) {
+    return {
+      active: false,
+      normalizedEmail,
+      customerCount: 0,
+      statuses: [],
+      reason: "missing_secret_key",
+    };
+  }
+  if (!normalizedEmail) {
+    return {
+      active: false,
+      normalizedEmail,
+      customerCount: 0,
+      statuses: [],
+      reason: "missing_email",
+    };
+  }
 
   const customerResponse = await fetch(
     `${stripeApiBase}/customers?email=${encodeURIComponent(normalizedEmail)}&limit=100`,
@@ -43,11 +68,29 @@ export async function hasActiveStripeSubscription(email: string): Promise<boolea
     }
   );
 
-  if (!customerResponse.ok) return false;
+  if (!customerResponse.ok) {
+    return {
+      active: false,
+      normalizedEmail,
+      customerCount: 0,
+      statuses: [],
+      reason: `customer_lookup_failed_${customerResponse.status}`,
+    };
+  }
+
   const customers = (await customerResponse.json()) as StripeCustomerList;
   const customerIds = (customers.data ?? []).map((c) => c.id).filter(Boolean);
-  if (customerIds.length === 0) return false;
+  if (customerIds.length === 0) {
+    return {
+      active: false,
+      normalizedEmail,
+      customerCount: 0,
+      statuses: [],
+      reason: "no_customer_found",
+    };
+  }
 
+  const statuses: string[] = [];
   for (const customerId of customerIds) {
     const subResponse = await fetch(
       `${stripeApiBase}/subscriptions?customer=${encodeURIComponent(
@@ -58,16 +101,29 @@ export async function hasActiveStripeSubscription(email: string): Promise<boolea
         headers: { Authorization: `Bearer ${secretKey}` },
       }
     );
-    if (!subResponse.ok) continue;
+    if (!subResponse.ok) {
+      statuses.push(`subscription_lookup_failed_${subResponse.status}`);
+      continue;
+    }
 
     const subs = (await subResponse.json()) as StripeSubscriptionList;
-    const active = (subs.data ?? []).some(
-      (sub) => sub.status === "active" || sub.status === "trialing"
-    );
-    if (active) return true;
+    const subStatuses = (subs.data ?? []).map((sub) => sub.status ?? "unknown");
+    statuses.push(...subStatuses);
   }
 
-  return false;
+  const active = statuses.some((status) => status === "active" || status === "trialing");
+  return {
+    active,
+    normalizedEmail,
+    customerCount: customerIds.length,
+    statuses,
+    reason: active ? "active_found" : "no_active_subscription",
+  };
+}
+
+export async function hasActiveStripeSubscription(email: string): Promise<boolean> {
+  const result = await getStripeSubscriptionDebug(email);
+  return result.active;
 }
 
 export function verifyStripeSignature(
