@@ -4,9 +4,15 @@ import { getStripeConfig, stripePostForm } from "@/lib/stripe";
 export async function POST(request: Request) {
   try {
     const { secretKey, priceId, yearlyPriceId, appUrl } = getStripeConfig();
-    if (!secretKey || !priceId) {
+    const missing: string[] = [];
+    if (!secretKey) missing.push("STRIPE_SECRET_KEY");
+    if (!priceId) missing.push("STRIPE_PRICE_ID");
+    if (!yearlyPriceId) missing.push("STRIPE_YEARLY_PRICE_ID");
+    if (!appUrl) missing.push("NEXT_PUBLIC_APP_URL");
+
+    if (missing.length > 0) {
       return NextResponse.json(
-        { ok: false, error: "Stripe is not configured. Missing env vars." },
+        { ok: false, error: `Stripe is not configured. Missing env vars: ${missing.join(", ")}` },
         { status: 500 }
       );
     }

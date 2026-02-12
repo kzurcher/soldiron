@@ -27,6 +27,48 @@ export async function stripePostForm(
   });
 }
 
+type StripeCustomerList = { data?: Array<{ id: string }> };
+type StripeSubscriptionList = { data?: Array<{ status?: string }> };
+
+export async function hasActiveStripeSubscription(email: string): Promise<boolean> {
+  const { secretKey } = getStripeConfig();
+  if (!secretKey || !email) return false;
+
+  const customerResponse = await fetch(
+    `${stripeApiBase}/customers?email=${encodeURIComponent(email)}&limit=100`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${secretKey}` },
+    }
+  );
+
+  if (!customerResponse.ok) return false;
+  const customers = (await customerResponse.json()) as StripeCustomerList;
+  const customerIds = (customers.data ?? []).map((c) => c.id).filter(Boolean);
+  if (customerIds.length === 0) return false;
+
+  for (const customerId of customerIds) {
+    const subResponse = await fetch(
+      `${stripeApiBase}/subscriptions?customer=${encodeURIComponent(
+        customerId
+      )}&status=all&limit=100`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${secretKey}` },
+      }
+    );
+    if (!subResponse.ok) continue;
+
+    const subs = (await subResponse.json()) as StripeSubscriptionList;
+    const active = (subs.data ?? []).some(
+      (sub) => sub.status === "active" || sub.status === "trialing"
+    );
+    if (active) return true;
+  }
+
+  return false;
+}
+
 export function verifyStripeSignature(
   rawBody: string,
   signatureHeader: string,

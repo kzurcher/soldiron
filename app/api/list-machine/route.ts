@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { saveListingSubmission, type ListingSubmissionInput } from "@/lib/listing-store";
-import { getSubscriptionByEmail } from "@/lib/subscription-store";
+import { hasActiveStripeSubscription } from "@/lib/stripe";
 
 function normalize(body: Partial<ListingSubmissionInput>): Omit<ListingSubmissionInput, "photoPaths"> {
   return {
@@ -70,8 +70,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error }, { status: 400 });
     }
 
-    const subscription = await getSubscriptionByEmail(input.email);
-    if (!subscription || subscription.status !== "active") {
+    const hasActiveSubscription = await hasActiveStripeSubscription(input.email);
+    if (!hasActiveSubscription) {
       return NextResponse.json(
         {
           ok: false,
