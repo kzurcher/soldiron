@@ -58,7 +58,14 @@ export default function ListMachinePage() {
   }
 
   useEffect(() => {
-    setCheckoutSessionId(localStorage.getItem("soldiron_checkout_session_id") ?? "");
+    const url = new URL(window.location.href);
+    const sessionFromUrl = url.searchParams.get("session_id") ?? "";
+    const sessionFromStorage = localStorage.getItem("soldiron_checkout_session_id") ?? "";
+    const resolvedSession = sessionFromUrl || sessionFromStorage;
+    setCheckoutSessionId(resolvedSession);
+    if (sessionFromUrl) {
+      localStorage.setItem("soldiron_checkout_session_id", sessionFromUrl);
+    }
   }, []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {

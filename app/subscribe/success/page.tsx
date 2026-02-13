@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 export default function SubscribeSuccessPage() {
   const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [sessionId, setSessionId] = useState("");
 
   useEffect(() => {
     async function confirmSession() {
@@ -14,6 +15,7 @@ export default function SubscribeSuccessPage() {
         setStatus("error");
         return;
       }
+      setSessionId(sessionId);
 
       try {
         localStorage.setItem("soldiron_checkout_session_id", sessionId);
@@ -45,7 +47,7 @@ export default function SubscribeSuccessPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
-              href="/list-machine"
+              href={sessionId ? `/list-machine?session_id=${encodeURIComponent(sessionId)}` : "/list-machine"}
               className="border border-[var(--line-strong)] bg-[var(--gold)] px-5 py-3 text-xs font-bold uppercase tracking-[0.12em] text-black"
             >
               Post Listing
