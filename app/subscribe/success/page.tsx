@@ -1,13 +1,47 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function SubscribeSuccessPage() {
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get("session_id");
+  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+
+  useEffect(() => {
+    async function confirmSession() {
+      if (!sessionId) {
+        setStatus("error");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/billing/confirm-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+        setStatus(response.ok ? "ok" : "error");
+      } catch {
+        setStatus("error");
+      }
+    }
+
+    void confirmSession();
+  }, [sessionId]);
+
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <main className="mx-auto flex min-h-screen max-w-3xl items-center px-5 py-12">
         <section className="w-full border border-[var(--line)] bg-[var(--panel)] p-8 text-center">
           <h1 className="font-display text-4xl uppercase text-[var(--gold)]">Subscription Active</h1>
           <p className="mt-3 text-sm text-[var(--muted)]">
-            Your billing setup is complete. You can now create listings.
+            {status === "ok"
+              ? "Your billing setup is complete. You can now create listings."
+              : status === "error"
+                ? "Subscription succeeded, but final confirmation is pending. Try posting now or refresh."
+                : "Finalizing your subscription..."}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link

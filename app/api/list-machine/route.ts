@@ -4,6 +4,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { saveListingSubmission, type ListingSubmissionInput } from "@/lib/listing-store";
 import { getStripeSubscriptionDebug } from "@/lib/stripe";
+import { getSubscriptionByEmail } from "@/lib/subscription-store";
 
 function normalize(body: Partial<ListingSubmissionInput>): Omit<ListingSubmissionInput, "photoPaths"> {
   return {
@@ -70,8 +71,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error }, { status: 400 });
     }
 
+    const localSub = await getSubscriptionByEmail(input.email);
     const subscriptionDebug = await getStripeSubscriptionDebug(input.email);
-    if (!subscriptionDebug.active) {
+    const isActive = localSub?.status === "active" || subscriptionDebug.active;
+    if (!isActive) {
       return NextResponse.json(
         {
           ok: false,
