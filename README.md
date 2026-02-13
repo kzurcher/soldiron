@@ -26,6 +26,10 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PRICE_ID=price_...
 STRIPE_YEARLY_PRICE_ID=price_... # optional yearly plan
 STRIPE_WEBHOOK_SECRET=whsec_...
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+CLOUDINARY_UPLOAD_FOLDER=soldiron/listings
 ```
 
 ### Stripe Dashboard Steps
@@ -59,6 +63,10 @@ Set production env vars in Vercel:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PRICE_ID`
 - `STRIPE_WEBHOOK_SECRET`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `CLOUDINARY_UPLOAD_FOLDER` (optional)
 
 Then configure a Stripe webhook endpoint to:
 

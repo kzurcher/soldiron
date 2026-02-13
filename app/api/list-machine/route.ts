@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { saveListingSubmission, type ListingSubmissionInput } from "@/lib/listing-store";
 import { getStripeSubscriptionDebug, isCheckoutSessionActiveForEmail } from "@/lib/stripe";
 import { getSubscriptionByEmail } from "@/lib/subscription-store";
+import { isCloudinaryConfigured, uploadImageToCloudinary } from "@/lib/cloudinary";
 
 function normalize(body: Partial<ListingSubmissionInput>): Omit<ListingSubmissionInput, "photoPaths"> {
   return {
@@ -100,7 +101,14 @@ export async function POST(request: Request) {
       .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
     const photoPaths: string[] = [];
-    if (files.length > 0) {
+    if (files.length > 0 && isCloudinaryConfigured()) {
+      for (const file of files) {
+        const uploadedUrl = await uploadImageToCloudinary(file);
+        if (uploadedUrl) {
+          photoPaths.push(uploadedUrl);
+        }
+      }
+    } else if (files.length > 0) {
       const uploadDir = path.join(process.cwd(), "public", "uploads", "listings");
       try {
         await mkdir(uploadDir, { recursive: true });
