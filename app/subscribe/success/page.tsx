@@ -16,6 +16,7 @@ export default function SubscribeSuccessPage() {
       }
 
       try {
+        localStorage.setItem("soldiron_checkout_session_id", sessionId);
         const response = await fetch("/api/billing/confirm-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

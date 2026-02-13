@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { saveListingSubmission, type ListingSubmissionInput } from "@/lib/listing-store";
-import { getStripeSubscriptionDebug } from "@/lib/stripe";
+import { getStripeSubscriptionDebug, isCheckoutSessionActiveForEmail } from "@/lib/stripe";
 import { getSubscriptionByEmail } from "@/lib/subscription-store";
 
 function normalize(body: Partial<ListingSubmissionInput>): Omit<ListingSubmissionInput, "photoPaths"> {
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       email: String(formData.get("email") ?? ""),
       phoneNumber: String(formData.get("phoneNumber") ?? ""),
     });
+    const checkoutSessionId = String(formData.get("checkoutSessionId") ?? "");
     const error = validate(input);
 
     if (error) {
@@ -73,7 +74,10 @@ export async function POST(request: Request) {
 
     const localSub = await getSubscriptionByEmail(input.email);
     const subscriptionDebug = await getStripeSubscriptionDebug(input.email);
-    const isActive = localSub?.status === "active" || subscriptionDebug.active;
+    const checkoutSessionActive = checkoutSessionId
+      ? await isCheckoutSessionActiveForEmail(checkoutSessionId, input.email)
+      : false;
+    const isActive = localSub?.status === "active" || subscriptionDebug.active || checkoutSessionActive;
     if (!isActive) {
       return NextResponse.json(
         {
@@ -84,6 +88,7 @@ export async function POST(request: Request) {
             reason: subscriptionDebug.reason,
             customerCount: subscriptionDebug.customerCount,
             statuses: subscriptionDebug.statuses,
+            checkoutSessionActive,
           },
         },
         { status: 402 }

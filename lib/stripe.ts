@@ -29,6 +29,11 @@ export async function stripePostForm(
 
 type StripeCustomerList = { data?: Array<{ id: string }> };
 type StripeSubscriptionList = { data?: Array<{ status?: string }> };
+type StripeCheckoutSession = {
+  customer_email?: string;
+  customer_details?: { email?: string };
+  subscription?: string;
+};
 
 export type StripeSubscriptionDebug = {
   active: boolean;
@@ -124,6 +129,35 @@ export async function getStripeSubscriptionDebug(email: string): Promise<StripeS
 export async function hasActiveStripeSubscription(email: string): Promise<boolean> {
   const result = await getStripeSubscriptionDebug(email);
   return result.active;
+}
+
+export async function isCheckoutSessionActiveForEmail(
+  sessionId: string,
+  email: string
+): Promise<boolean> {
+  const { secretKey } = getStripeConfig();
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!secretKey || !sessionId || !normalizedEmail) return false;
+
+  const sessionResponse = await fetch(`${stripeApiBase}/checkout/sessions/${sessionId}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${secretKey}` },
+  });
+  if (!sessionResponse.ok) return false;
+
+  const session = (await sessionResponse.json()) as StripeCheckoutSession;
+  const sessionEmail =
+    session.customer_email?.toLowerCase() ?? session.customer_details?.email?.toLowerCase() ?? "";
+  const subscriptionId = session.subscription ?? "";
+  if (!sessionEmail || !subscriptionId || sessionEmail !== normalizedEmail) return false;
+
+  const subResponse = await fetch(`${stripeApiBase}/subscriptions/${subscriptionId}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${secretKey}` },
+  });
+  if (!subResponse.ok) return false;
+  const sub = (await subResponse.json()) as { status?: string };
+  return sub.status === "active" || sub.status === "trialing";
 }
 
 export function verifyStripeSignature(

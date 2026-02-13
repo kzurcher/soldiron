@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ListingFormState = {
   listingType: "equipment" | "attachment" | "truck";
@@ -45,6 +45,7 @@ const inputClassName =
 export default function ListMachinePage() {
   const [form, setForm] = useState<ListingFormState>(initialState);
   const [photos, setPhotos] = useState<File[]>([]);
+  const [checkoutSessionId, setCheckoutSessionId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
   const [status, setStatus] = useState<{ type: "idle" | "success" | "error"; message: string }>({
@@ -55,6 +56,10 @@ export default function ListMachinePage() {
   function updateField(field: keyof ListingFormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
+
+  useEffect(() => {
+    setCheckoutSessionId(localStorage.getItem("soldiron_checkout_session_id") ?? "");
+  }, []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,6 +83,7 @@ export default function ListMachinePage() {
       payload.append("companyName", form.companyName);
       payload.append("email", form.email);
       payload.append("phoneNumber", form.phoneNumber);
+      payload.append("checkoutSessionId", checkoutSessionId);
       photos.forEach((file) => payload.append("photos", file));
 
       const response = await fetch("/api/list-machine", {
