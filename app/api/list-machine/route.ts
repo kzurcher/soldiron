@@ -102,28 +102,33 @@ export async function POST(request: Request) {
 
     const photoPaths: string[] = [];
     if (files.length > 0 && isCloudinaryConfigured()) {
+      const uploadErrors: string[] = [];
       for (const file of files) {
-        const uploadedUrl = await uploadImageToCloudinary(file);
-        if (uploadedUrl) {
+        try {
+          const uploadedUrl = await uploadImageToCloudinary(file);
           photoPaths.push(uploadedUrl);
+        } catch (err) {
+          uploadErrors.push(err instanceof Error ? err.message : "unknown_upload_error");
         }
+      }
+      if (photoPaths.length === 0) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Photo upload failed. Verify Cloudinary settings.",
+            debug: { uploadErrors },
+          },
+          { status: 500 }
+        );
       }
     } else if (files.length > 0) {
-      const uploadDir = path.join(process.cwd(), "public", "uploads", "listings");
-      try {
-        await mkdir(uploadDir, { recursive: true });
-        for (const file of files) {
-          const safeName = cleanFilename(file.name);
-          const filename = `${Date.now()}-${randomUUID()}-${safeName}`;
-          const diskPath = path.join(uploadDir, filename);
-          const publicPath = `/uploads/listings/${filename}`;
-          const buffer = Buffer.from(await file.arrayBuffer());
-          await writeFile(diskPath, buffer);
-          photoPaths.push(publicPath);
-        }
-      } catch {
-        // Ignore filesystem upload failures in serverless environments.
-      }
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Photo upload requires Cloudinary configuration in production.",
+        },
+        { status: 500 }
+      );
     }
 
     const saved = await saveListingSubmission({ ...input, photoPaths });

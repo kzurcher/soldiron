@@ -26,9 +26,11 @@ export function isCloudinaryConfigured(): boolean {
   return Boolean(cloudName && apiKey && apiSecret);
 }
 
-export async function uploadImageToCloudinary(file: File): Promise<string | null> {
+export async function uploadImageToCloudinary(file: File): Promise<string> {
   const { cloudName, apiKey, apiSecret, folder } = getCloudinaryConfig();
-  if (!cloudName || !apiKey || !apiSecret) return null;
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error("cloudinary_not_configured");
+  }
 
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = createSignature({ folder, timestamp }, apiSecret);
@@ -49,6 +51,8 @@ export async function uploadImageToCloudinary(file: File): Promise<string | null
   });
 
   const result = (await response.json()) as CloudinaryUploadResult;
-  if (!response.ok || !result.secure_url) return null;
+  if (!response.ok || !result.secure_url) {
+    throw new Error(result.error?.message ?? "cloudinary_upload_failed");
+  }
   return result.secure_url;
 }
