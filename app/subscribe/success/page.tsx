@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function SubscribeSuccessPage() {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
   const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
 
   useEffect(() => {
     async function confirmSession() {
+      const url = new URL(window.location.href);
+      const sessionId = url.searchParams.get("session_id");
       if (!sessionId) {
         setStatus("error");
         return;
@@ -29,7 +28,7 @@ export default function SubscribeSuccessPage() {
     }
 
     void confirmSession();
-  }, [sessionId]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
