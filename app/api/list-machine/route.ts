@@ -95,29 +95,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "listings");
-    await mkdir(uploadDir, { recursive: true });
-
     const files = formData
       .getAll("photos")
       .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
     const photoPaths: string[] = [];
-    for (const file of files) {
-      const safeName = cleanFilename(file.name);
-      const filename = `${Date.now()}-${randomUUID()}-${safeName}`;
-      const diskPath = path.join(uploadDir, filename);
-      const publicPath = `/uploads/listings/${filename}`;
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await writeFile(diskPath, buffer);
-      photoPaths.push(publicPath);
+    if (files.length > 0) {
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "listings");
+      try {
+        await mkdir(uploadDir, { recursive: true });
+        for (const file of files) {
+          const safeName = cleanFilename(file.name);
+          const filename = `${Date.now()}-${randomUUID()}-${safeName}`;
+          const diskPath = path.join(uploadDir, filename);
+          const publicPath = `/uploads/listings/${filename}`;
+          const buffer = Buffer.from(await file.arrayBuffer());
+          await writeFile(diskPath, buffer);
+          photoPaths.push(publicPath);
+        }
+      } catch {
+        // Ignore filesystem upload failures in serverless environments.
+      }
     }
 
     const saved = await saveListingSubmission({ ...input, photoPaths });
     return NextResponse.json({ ok: true, id: saved.id }, { status: 201 });
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown_error";
     return NextResponse.json(
-      { ok: false, error: "Failed to submit listing request." },
+      { ok: false, error: "Failed to submit listing request.", debug: { message } },
       { status: 500 }
     );
   }

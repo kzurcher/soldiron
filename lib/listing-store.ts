@@ -26,6 +26,10 @@ type StoredListingSubmission = ListingSubmissionInput & {
   createdAt: string;
 };
 
+declare global {
+  var soldironListingCache: StoredListingSubmission[] | undefined;
+}
+
 const dataDir = path.join(process.cwd(), "data");
 const dbPath = path.join(dataDir, "listings.json");
 
@@ -34,7 +38,7 @@ async function readListings(): Promise<StoredListingSubmission[]> {
     const raw = await readFile(dbPath, "utf8");
     return JSON.parse(raw) as StoredListingSubmission[];
   } catch {
-    return [];
+    return globalThis.soldironListingCache ?? [];
   }
 }
 
@@ -45,7 +49,6 @@ export async function getListingSubmissions(): Promise<StoredListingSubmission[]
 export async function saveListingSubmission(
   payload: ListingSubmissionInput
 ): Promise<StoredListingSubmission> {
-  await mkdir(dataDir, { recursive: true });
   const current = await readListings();
 
   const record: StoredListingSubmission = {
@@ -55,6 +58,13 @@ export async function saveListingSubmission(
   };
 
   current.unshift(record);
-  await writeFile(dbPath, JSON.stringify(current, null, 2), "utf8");
+  globalThis.soldironListingCache = current;
+
+  try {
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(dbPath, JSON.stringify(current, null, 2), "utf8");
+  } catch {
+    // Serverless runtimes can be read-only. Keep in-memory cache as fallback.
+  }
   return record;
 }

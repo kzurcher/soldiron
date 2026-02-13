@@ -10,6 +10,10 @@ export type SubscriptionRecord = {
   updatedAt: string;
 };
 
+declare global {
+  var soldironSubscriptionCache: SubscriptionRecord[] | undefined;
+}
+
 const dataDir = path.join(process.cwd(), "data");
 const dbPath = path.join(dataDir, "subscriptions.json");
 
@@ -18,13 +22,18 @@ async function readSubscriptions(): Promise<SubscriptionRecord[]> {
     const raw = await readFile(dbPath, "utf8");
     return JSON.parse(raw) as SubscriptionRecord[];
   } catch {
-    return [];
+    return globalThis.soldironSubscriptionCache ?? [];
   }
 }
 
 async function writeSubscriptions(records: SubscriptionRecord[]): Promise<void> {
-  await mkdir(dataDir, { recursive: true });
-  await writeFile(dbPath, JSON.stringify(records, null, 2), "utf8");
+  globalThis.soldironSubscriptionCache = records;
+  try {
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(dbPath, JSON.stringify(records, null, 2), "utf8");
+  } catch {
+    // Serverless runtimes can be read-only. Keep in-memory cache as fallback.
+  }
 }
 
 export async function upsertSubscription(
