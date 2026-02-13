@@ -48,13 +48,42 @@ export default function ListingsPage() {
   const [listings, setListings] = useState<ListingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [accessChecked, setAccessChecked] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
   const [rangeMiles, setRangeMiles] = useState(100);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
 
   useEffect(() => {
-    async function loadListings() {
+    async function verifyAndLoadListings() {
+      try {
+        const email = localStorage.getItem("soldiron_subscriber_email") ?? "";
+        if (!email) {
+          setHasAccess(false);
+          setAccessChecked(true);
+          setLoading(false);
+          return;
+        }
+
+        const statusResponse = await fetch(`/api/billing/status?email=${encodeURIComponent(email)}`);
+        const statusResult = (await statusResponse.json()) as { ok: boolean; active?: boolean };
+        if (!statusResponse.ok || !statusResult.ok || !statusResult.active) {
+          setHasAccess(false);
+          setAccessChecked(true);
+          setLoading(false);
+          return;
+        }
+
+        setHasAccess(true);
+        setAccessChecked(true);
+      } catch {
+        setHasAccess(false);
+        setAccessChecked(true);
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch("/api/listings");
         const result = (await response.json()) as {
@@ -73,7 +102,7 @@ export default function ListingsPage() {
       }
     }
 
-    loadListings();
+    void verifyAndLoadListings();
   }, []);
 
   function requestLocation() {
@@ -142,6 +171,23 @@ export default function ListingsPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-5 py-10">
+        {accessChecked && !hasAccess ? (
+          <section className="border border-[var(--line)] bg-[var(--panel)] p-8 text-center">
+            <h2 className="font-display text-3xl uppercase text-[var(--gold)]">
+              Subscription Required
+            </h2>
+            <p className="mt-3 text-sm text-[var(--muted)]">
+              An active subscription is required to browse equipment listings.
+            </p>
+            <Link
+              href="/subscribe"
+              className="mt-6 inline-block border border-[var(--line-strong)] bg-[var(--gold)] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110"
+            >
+              Sign Up
+            </Link>
+          </section>
+        ) : (
+          <>
         <section className="mb-6 border border-[var(--line)] bg-[var(--panel)] p-5">
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -229,6 +275,8 @@ export default function ListingsPage() {
               </article>
             ))}
           </section>
+        )}
+          </>
         )}
       </main>
     </div>

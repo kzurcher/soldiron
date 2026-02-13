@@ -46,6 +46,8 @@ export default function ListMachinePage() {
   const [form, setForm] = useState<ListingFormState>(initialState);
   const [photos, setPhotos] = useState<File[]>([]);
   const [checkoutSessionId, setCheckoutSessionId] = useState("");
+  const [accessChecked, setAccessChecked] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
   const [status, setStatus] = useState<{ type: "idle" | "success" | "error"; message: string }>({
@@ -58,14 +60,39 @@ export default function ListMachinePage() {
   }
 
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const sessionFromUrl = url.searchParams.get("session_id") ?? "";
-    const sessionFromStorage = localStorage.getItem("soldiron_checkout_session_id") ?? "";
-    const resolvedSession = sessionFromUrl || sessionFromStorage;
-    setCheckoutSessionId(resolvedSession);
-    if (sessionFromUrl) {
-      localStorage.setItem("soldiron_checkout_session_id", sessionFromUrl);
+    async function hydrateAccess() {
+      const url = new URL(window.location.href);
+      const sessionFromUrl = url.searchParams.get("session_id") ?? "";
+      const sessionFromStorage = localStorage.getItem("soldiron_checkout_session_id") ?? "";
+      const resolvedSession = sessionFromUrl || sessionFromStorage;
+      setCheckoutSessionId(resolvedSession);
+      if (sessionFromUrl) {
+        localStorage.setItem("soldiron_checkout_session_id", sessionFromUrl);
+      }
+
+      const email = (localStorage.getItem("soldiron_subscriber_email") ?? "").toLowerCase();
+      if (email) {
+        setForm((prev) => ({ ...prev, email }));
+      }
+
+      if (!email) {
+        setHasAccess(false);
+        setAccessChecked(true);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/billing/status?email=${encodeURIComponent(email)}`);
+        const result = (await response.json()) as { ok: boolean; active?: boolean };
+        setHasAccess(Boolean(response.ok && result.ok && result.active));
+      } catch {
+        setHasAccess(false);
+      } finally {
+        setAccessChecked(true);
+      }
     }
+
+    void hydrateAccess();
   }, []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -180,6 +207,22 @@ export default function ListMachinePage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-10">
+        {accessChecked && !hasAccess ? (
+          <section className="border border-[var(--line)] bg-[var(--panel)] p-6 text-center sm:p-8">
+            <h2 className="font-display text-3xl uppercase text-[var(--gold)]">
+              Subscription Required
+            </h2>
+            <p className="mt-3 text-sm text-[var(--muted)]">
+              You need an active subscription before posting listings.
+            </p>
+            <Link
+              href="/subscribe"
+              className="mt-6 inline-block border border-[var(--line-strong)] bg-[var(--gold)] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110"
+            >
+              Sign Up
+            </Link>
+          </section>
+        ) : (
         <section className="border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
           <p className="text-sm leading-6 text-[var(--muted)]">
             Start your listing submission below. This captures seller and machine details so we can
@@ -368,6 +411,7 @@ export default function ListMachinePage() {
             )}
           </form>
         </section>
+        )}
       </main>
     </div>
   );

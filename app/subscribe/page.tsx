@@ -29,6 +29,7 @@ export default function SubscribePage() {
       }
 
       setMessage("Redirecting to secure checkout...");
+      localStorage.setItem("soldiron_subscriber_email", email.trim().toLowerCase());
       window.location.href = result.url;
     } catch {
       setError("Could not start checkout.");

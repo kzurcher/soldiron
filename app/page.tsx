@@ -30,7 +30,7 @@ export default function Home() {
             <Link href="/subscribe" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Post Listing
             </Link>
-            <Link href="/subscribe" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
+            <Link href="/listings" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Browse All Equipment
             </Link>
             <Link href="/subscribe" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
@@ -56,7 +56,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/subscribe"
+                href="/listings"
                 className="border border-[var(--line-strong)] bg-[var(--gold)] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110"
               >
                 Browse Equipment
