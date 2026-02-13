@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type ListingRecord = {
   id: string;
+  listingType?: string;
   make: string;
   model: string;
   year: string;
@@ -253,6 +255,21 @@ export default function ListingsPage() {
           <section className="grid gap-4 md:grid-cols-2">
             {visibleListings.map((listing) => (
               <article key={listing.id} className="border border-[var(--line)] bg-[var(--panel)] p-5">
+                <div className="relative mb-4 h-44 w-full overflow-hidden border border-[var(--line)] bg-[var(--panel-soft)]">
+                  {listing.photoPaths && listing.photoPaths.length > 0 ? (
+                    <Image
+                      src={listing.photoPaths[0]}
+                      alt={`${listing.make} ${listing.model}`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      No Photo Uploaded
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--gold)]">
                   {listing.make}
                 </p>
@@ -269,7 +286,13 @@ export default function ListingsPage() {
                 <div className="mt-5 flex items-center justify-between border-t border-[var(--line)] pt-4">
                   <p className="font-display text-3xl text-[var(--gold)]">{listing.askingPrice || "TBD"}</p>
                   <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
-                    {listing.operatingHours ? `${listing.operatingHours} hrs` : "Hours N/A"}
+                    {listing.operatingHours
+                      ? listing.listingType === "truck"
+                        ? `${listing.operatingHours} miles`
+                        : `${listing.operatingHours} hrs`
+                      : listing.listingType === "truck"
+                        ? "Miles N/A"
+                        : "Hours N/A"}
                   </p>
                 </div>
               </article>

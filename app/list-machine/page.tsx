@@ -59,6 +59,8 @@ export default function ListMachinePage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  const usageLabel = form.listingType === "truck" ? "Miles" : "Operating Hours";
+
   useEffect(() => {
     async function hydrateAccess() {
       const url = new URL(window.location.href);
@@ -271,7 +273,7 @@ export default function ListMachinePage() {
                 />
                 <input
                   type="number"
-                  placeholder="Operating Hours"
+                  placeholder={usageLabel}
                   value={form.operatingHours}
                   onChange={(e) => updateField("operatingHours", e.target.value)}
                   className={inputClassName}
