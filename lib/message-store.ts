@@ -53,6 +53,20 @@ export async function getMessagesForSeller(sellerEmail: string): Promise<StoredM
   return messages.filter((message) => message.sellerEmail.toLowerCase() === normalized);
 }
 
+export async function getMessageForSellerById(
+  messageId: string,
+  sellerEmail: string
+): Promise<StoredMessage | null> {
+  const normalizedEmail = sellerEmail.trim().toLowerCase();
+  const normalizedId = messageId.trim();
+  if (!normalizedId || !normalizedEmail) return null;
+  const messages = await readMessages();
+  const message = messages.find((item) => item.id === normalizedId);
+  if (!message) return null;
+  if (message.sellerEmail.toLowerCase() !== normalizedEmail) return null;
+  return message;
+}
+
 export async function saveMessage(payload: MessageInput): Promise<StoredMessage> {
   const current = await readMessages();
   const record: StoredMessage = {
