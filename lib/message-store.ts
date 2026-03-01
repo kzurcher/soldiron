@@ -13,9 +13,17 @@ export type MessageInput = {
   message: string;
 };
 
-type StoredMessage = MessageInput & {
+export type MessageReply = {
+  id: string;
+  sellerEmail: string;
+  reply: string;
+  createdAt: string;
+};
+
+export type StoredMessage = MessageInput & {
   id: string;
   createdAt: string;
+  replies: MessageReply[];
 };
 
 declare global {
@@ -28,7 +36,11 @@ const dbPath = path.join(dataDir, "messages.json");
 async function readMessages(): Promise<StoredMessage[]> {
   try {
     const raw = await readFile(dbPath, "utf8");
-    return JSON.parse(raw) as StoredMessage[];
+    const parsed = JSON.parse(raw) as Array<StoredMessage | (Omit<StoredMessage, "replies"> & { replies?: MessageReply[] })>;
+    return parsed.map((message) => ({
+      ...message,
+      replies: message.replies ?? [],
+    }));
   } catch {
     return globalThis.soldironMessageCache ?? [];
   }
@@ -47,6 +59,7 @@ export async function saveMessage(payload: MessageInput): Promise<StoredMessage>
     ...payload,
     id: randomUUID(),
     createdAt: new Date().toISOString(),
+    replies: [],
   };
 
   current.unshift(record);
@@ -60,4 +73,37 @@ export async function saveMessage(payload: MessageInput): Promise<StoredMessage>
   }
 
   return record;
+}
+
+export async function saveMessageReply(input: {
+  messageId: string;
+  sellerEmail: string;
+  reply: string;
+}): Promise<{ ok: boolean; error?: string; message?: StoredMessage; reply?: MessageReply }> {
+  const current = await readMessages();
+  const normalizedSellerEmail = input.sellerEmail.trim().toLowerCase();
+  const target = current.find((message) => message.id === input.messageId);
+
+  if (!target) return { ok: false, error: "message_not_found" };
+  if (target.sellerEmail.toLowerCase() !== normalizedSellerEmail) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const reply: MessageReply = {
+    id: randomUUID(),
+    sellerEmail: normalizedSellerEmail,
+    reply: input.reply.trim(),
+    createdAt: new Date().toISOString(),
+  };
+  target.replies.unshift(reply);
+  globalThis.soldironMessageCache = current;
+
+  try {
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(dbPath, JSON.stringify(current, null, 2), "utf8");
+  } catch {
+    // Read-only serverless fallback.
+  }
+
+  return { ok: true, message: target, reply };
 }
