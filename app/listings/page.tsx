@@ -23,7 +23,7 @@ type ListingRecord = {
 
 type DistanceListing = ListingRecord & { distanceMiles: number | null };
 
-const rangeOptions = [25, 50, 100, 250, 500];
+const rangeOptions = [25, 50, 100, 250, 500, 99999];
 
 function toNumber(value?: string): number | null {
   if (!value) return null;
@@ -150,6 +150,7 @@ export default function ListingsPage() {
 
   const visibleListings = useMemo(() => {
     if (!userLocation) return listingsWithDistance;
+    if (rangeMiles === 99999) return listingsWithDistance;
     return listingsWithDistance.filter(
       (listing) => listing.distanceMiles !== null && listing.distanceMiles <= rangeMiles
     );
@@ -213,7 +214,7 @@ export default function ListingsPage() {
             >
               {rangeOptions.map((miles) => (
                 <option key={miles} value={miles}>
-                  {miles} miles
+                  {miles === 99999 ? "Unlimited distance" : `${miles} miles`}
                 </option>
               ))}
             </select>
