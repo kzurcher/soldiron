@@ -17,6 +17,8 @@ type ListingRecord = {
   askingPrice: string;
   description: string;
   photoPaths?: string[];
+  fullName?: string;
+  phoneNumber?: string;
 };
 
 type DistanceListing = ListingRecord & { distanceMiles: number | null };
@@ -254,7 +256,11 @@ export default function ListingsPage() {
         ) : (
           <section className="grid gap-4 md:grid-cols-2">
             {visibleListings.map((listing) => (
-              <article key={listing.id} className="border border-[var(--line)] bg-[var(--panel)] p-5">
+              <Link
+                key={listing.id}
+                href={`/listings/${listing.id}`}
+                className="block border border-[var(--line)] bg-[var(--panel)] p-5 transition hover:border-[var(--line-strong)]"
+              >
                 <div className="relative mb-4 h-44 w-full overflow-hidden border border-[var(--line)] bg-[var(--panel-soft)]">
                   {listing.photoPaths && listing.photoPaths.length > 0 ? (
                     <Image
@@ -283,6 +289,9 @@ export default function ListingsPage() {
                   </p>
                 )}
                 <p className="mt-3 text-sm text-[var(--muted)] line-clamp-3">{listing.description}</p>
+                <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--gold)]/80">
+                  Tap to view details
+                </p>
                 <div className="mt-5 flex items-center justify-between border-t border-[var(--line)] pt-4">
                   <p className="font-display text-3xl text-[var(--gold)]">{listing.askingPrice || "TBD"}</p>
                   <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
@@ -292,10 +301,10 @@ export default function ListingsPage() {
                         : `${listing.operatingHours} hrs`
                       : listing.listingType === "truck"
                         ? "Miles N/A"
-                        : "Hours N/A"}
+                      : "Hours N/A"}
                   </p>
                 </div>
-              </article>
+              </Link>
             ))}
           </section>
         )}

@@ -30,6 +30,12 @@ CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 CLOUDINARY_UPLOAD_FOLDER=soldiron/listings
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=you@example.com
+SMTP_PASS=your_app_password
+SMTP_FROM_EMAIL=you@example.com
 ```
 
 ### Stripe Dashboard Steps
@@ -67,6 +73,12 @@ Set production env vars in Vercel:
 - `CLOUDINARY_API_KEY`
 - `CLOUDINARY_API_SECRET`
 - `CLOUDINARY_UPLOAD_FOLDER` (optional)
+- `SMTP_HOST` (for seller message email notifications)
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM_EMAIL`
 
 Then configure a Stripe webhook endpoint to:
 

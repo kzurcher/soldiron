@@ -59,6 +59,11 @@ export default function ListMachinePage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  function appendSelectedFiles(files: FileList | null) {
+    if (!files) return;
+    setPhotos((prev) => [...prev, ...Array.from(files)]);
+  }
+
   const usageLabel = form.listingType === "truck" ? "Miles" : "Operating Hours";
 
   useEffect(() => {
@@ -324,20 +329,34 @@ export default function ListMachinePage() {
                 />
                 <div className="grid gap-2">
                   <label
-                    htmlFor="photos"
+                    htmlFor="photos-library"
                     className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]"
                   >
                     Upload Photos
                   </label>
-                  <input
-                    id="photos"
-                    name="photos"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => setPhotos(Array.from(e.target.files ?? []))}
-                    className="block w-full border border-[var(--line)] bg-[var(--panel-soft)] px-3 py-2 text-sm file:mr-4 file:border-0 file:bg-[var(--gold)] file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-[0.1em] file:text-black"
-                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input
+                      id="photos-library"
+                      name="photos"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => appendSelectedFiles(e.target.files)}
+                      className="block w-full border border-[var(--line)] bg-[var(--panel-soft)] px-3 py-2 text-sm file:mr-4 file:border-0 file:bg-[var(--gold)] file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-[0.1em] file:text-black"
+                    />
+                    <input
+                      id="photos-camera"
+                      name="camera-photo"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => appendSelectedFiles(e.target.files)}
+                      className="block w-full border border-[var(--line)] bg-[var(--panel-soft)] px-3 py-2 text-sm file:mr-4 file:border-0 file:bg-[var(--gold)] file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-[0.1em] file:text-black"
+                    />
+                  </div>
+                  <p className="text-[11px] text-[var(--muted)]">
+                    Use Photos for gallery upload or Camera to take a new picture.
+                  </p>
                   {photos.length > 0 && (
                     <p className="text-xs text-[var(--gold)]">
                       {photos.length} photo{photos.length === 1 ? "" : "s"} selected

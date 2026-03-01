@@ -79,19 +79,32 @@ export default function ListAttachmentPage() {
                 />
                 <div className="grid gap-2">
                   <label
-                    htmlFor="attachment-photos"
+                    htmlFor="attachment-photos-library"
                     className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]"
                   >
                     Upload Photos
                   </label>
-                  <input
-                    id="attachment-photos"
-                    name="photos"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="block w-full border border-[var(--line)] bg-[var(--panel-soft)] px-3 py-2 text-sm file:mr-4 file:border-0 file:bg-[var(--gold)] file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-[0.1em] file:text-black"
-                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input
+                      id="attachment-photos-library"
+                      name="photos"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="block w-full border border-[var(--line)] bg-[var(--panel-soft)] px-3 py-2 text-sm file:mr-4 file:border-0 file:bg-[var(--gold)] file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-[0.1em] file:text-black"
+                    />
+                    <input
+                      id="attachment-photos-camera"
+                      name="camera-photo"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="block w-full border border-[var(--line)] bg-[var(--panel-soft)] px-3 py-2 text-sm file:mr-4 file:border-0 file:bg-[var(--gold)] file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-[0.1em] file:text-black"
+                    />
+                  </div>
+                  <p className="text-[11px] text-[var(--muted)]">
+                    Use Photos for gallery upload or Camera to take a new picture.
+                  </p>
                 </div>
               </div>
             </div>
