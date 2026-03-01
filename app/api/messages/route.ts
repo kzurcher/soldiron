@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { saveMessage } from "@/lib/message-store";
+import { getMessagesForSeller, saveMessage } from "@/lib/message-store";
 import { isEmailConfigured, sendEmailNotification } from "@/lib/email";
 
 type MessageRequest = {
@@ -15,6 +15,21 @@ type MessageRequest = {
 
 function clean(value: string | undefined): string {
   return (value ?? "").trim();
+}
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const sellerEmail = clean(searchParams.get("email") ?? undefined).toLowerCase();
+    if (!sellerEmail) {
+      return NextResponse.json({ ok: false, error: "Email is required." }, { status: 400 });
+    }
+
+    const messages = await getMessagesForSeller(sellerEmail);
+    return NextResponse.json({ ok: true, messages });
+  } catch {
+    return NextResponse.json({ ok: false, messages: [] }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

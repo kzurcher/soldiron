@@ -34,6 +34,13 @@ async function readMessages(): Promise<StoredMessage[]> {
   }
 }
 
+export async function getMessagesForSeller(sellerEmail: string): Promise<StoredMessage[]> {
+  const normalized = sellerEmail.trim().toLowerCase();
+  if (!normalized) return [];
+  const messages = await readMessages();
+  return messages.filter((message) => message.sellerEmail.toLowerCase() === normalized);
+}
+
 export async function saveMessage(payload: MessageInput): Promise<StoredMessage> {
   const current = await readMessages();
   const record: StoredMessage = {

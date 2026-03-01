@@ -26,12 +26,15 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <nav className="hidden w-[620px] items-center justify-between text-sm font-semibold uppercase tracking-[0.12em] md:flex">
+          <nav className="hidden w-[760px] items-center justify-between text-sm font-semibold uppercase tracking-[0.12em] md:flex">
             <Link href="/subscribe" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Post Listing
             </Link>
             <Link href="/listings" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Browse All Equipment
+            </Link>
+            <Link href="/messages" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
+              Messages
             </Link>
             <Link href="/subscribe" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Sign Up
