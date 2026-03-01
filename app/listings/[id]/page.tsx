@@ -40,6 +40,49 @@ export default function ListingDetailPage() {
   const [sending, setSending] = useState(false);
   const [messageStatus, setMessageStatus] = useState("");
 
+  function updateMessageField(field: "senderName" | "senderPhone" | "senderEmail" | "message", value: string) {
+    setMessageForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field !== "message") {
+        try {
+          localStorage.setItem(
+            "soldiron_user_profile",
+            JSON.stringify({
+              fullName: next.senderName,
+              phoneNumber: next.senderPhone,
+              email: next.senderEmail,
+            })
+          );
+        } catch {
+          // Ignore storage failures.
+        }
+      }
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("soldiron_user_profile");
+      const profile = raw
+        ? (JSON.parse(raw) as { fullName?: string; phoneNumber?: string; email?: string })
+        : null;
+      const savedEmail = localStorage.getItem("soldiron_subscriber_email") ?? "";
+      setMessageForm((prev) => ({
+        ...prev,
+        senderName: profile?.fullName ?? "",
+        senderPhone: profile?.phoneNumber ?? "",
+        senderEmail: profile?.email ?? savedEmail,
+      }));
+    } catch {
+      const savedEmail = localStorage.getItem("soldiron_subscriber_email") ?? "";
+      setMessageForm((prev) => ({
+        ...prev,
+        senderEmail: savedEmail,
+      }));
+    }
+  }, []);
+
   useEffect(() => {
     if (!listingId) return;
 
@@ -136,7 +179,7 @@ export default function ListingDetailPage() {
           ? "Message sent. Seller was also notified by email."
           : "Message sent on-site."
       );
-      setMessageForm({ senderName: "", senderPhone: "", senderEmail: "", message: "" });
+      setMessageForm((prev) => ({ ...prev, message: "" }));
     } catch {
       setMessageStatus("Could not send message.");
     } finally {
@@ -267,28 +310,28 @@ export default function ListingDetailPage() {
                   type="text"
                   placeholder="Your Name"
                   value={messageForm.senderName}
-                  onChange={(e) => setMessageForm((prev) => ({ ...prev, senderName: e.target.value }))}
+                  onChange={(e) => updateMessageField("senderName", e.target.value)}
                   className="h-10 border border-[var(--line)] bg-[var(--panel-soft)] px-3 text-sm outline-none focus:border-[var(--line-strong)]"
                 />
                 <input
                   type="text"
                   placeholder="Your Phone"
                   value={messageForm.senderPhone}
-                  onChange={(e) => setMessageForm((prev) => ({ ...prev, senderPhone: e.target.value }))}
+                  onChange={(e) => updateMessageField("senderPhone", e.target.value)}
                   className="h-10 border border-[var(--line)] bg-[var(--panel-soft)] px-3 text-sm outline-none focus:border-[var(--line-strong)]"
                 />
                 <input
                   type="email"
                   placeholder="Your Email (optional)"
                   value={messageForm.senderEmail}
-                  onChange={(e) => setMessageForm((prev) => ({ ...prev, senderEmail: e.target.value }))}
+                  onChange={(e) => updateMessageField("senderEmail", e.target.value)}
                   className="h-10 border border-[var(--line)] bg-[var(--panel-soft)] px-3 text-sm outline-none focus:border-[var(--line-strong)]"
                 />
                 <textarea
                   rows={5}
                   placeholder="Write your message to the seller..."
                   value={messageForm.message}
-                  onChange={(e) => setMessageForm((prev) => ({ ...prev, message: e.target.value }))}
+                  onChange={(e) => updateMessageField("message", e.target.value)}
                   className="border border-[var(--line)] bg-[var(--panel-soft)] px-3 py-2 text-sm outline-none focus:border-[var(--line-strong)]"
                 />
                 <button

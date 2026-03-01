@@ -1,14 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function SubscribePage() {
+  const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [plan, setPlan] = useState<"monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("soldiron_user_profile");
+      if (!raw) return;
+      const profile = JSON.parse(raw) as { fullName?: string; phoneNumber?: string; email?: string };
+      setFullName(profile.fullName ?? "");
+      setPhoneNumber(profile.phoneNumber ?? "");
+      setEmail(profile.email ?? "");
+    } catch {
+      // Ignore malformed local profile.
+    }
+  }, []);
 
   async function onSubscribe(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -17,10 +32,20 @@ export default function SubscribePage() {
     setLoading(true);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+      localStorage.setItem(
+        "soldiron_user_profile",
+        JSON.stringify({
+          fullName: fullName.trim(),
+          phoneNumber: phoneNumber.trim(),
+          email: normalizedEmail,
+        })
+      );
+
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, plan }),
+        body: JSON.stringify({ email: normalizedEmail, plan }),
       });
       const result = (await response.json()) as { ok: boolean; url?: string; error?: string };
       if (!response.ok || !result.ok || !result.url) {
@@ -29,7 +54,7 @@ export default function SubscribePage() {
       }
 
       setMessage("Redirecting to secure checkout...");
-      localStorage.setItem("soldiron_subscriber_email", email.trim().toLowerCase());
+      localStorage.setItem("soldiron_subscriber_email", normalizedEmail);
       window.location.href = result.url;
     } catch {
       setError("Could not start checkout.");
@@ -66,6 +91,38 @@ export default function SubscribePage() {
           </p>
 
           <form className="mt-6 grid max-w-xl gap-3" onSubmit={onSubscribe}>
+            <div className="border border-[var(--line)] bg-[var(--panel-soft)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--gold)]">
+                Account Info
+              </p>
+              <div className="mt-3 grid gap-3">
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Full name"
+                  className="h-11 border border-[var(--line)] bg-[var(--panel)] px-3 text-sm outline-none transition placeholder:text-neutral-500 focus:border-[var(--line-strong)]"
+                />
+                <input
+                  type="tel"
+                  required
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Phone number"
+                  className="h-11 border border-[var(--line)] bg-[var(--panel)] px-3 text-sm outline-none transition placeholder:text-neutral-500 focus:border-[var(--line-strong)]"
+                />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email used for your account"
+                  className="h-11 border border-[var(--line)] bg-[var(--panel)] px-3 text-sm outline-none transition placeholder:text-neutral-500 focus:border-[var(--line-strong)]"
+                />
+              </div>
+            </div>
+
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value as "monthly" | "yearly")}
@@ -74,14 +131,6 @@ export default function SubscribePage() {
               <option value="monthly">Monthly Plan - $15.00/month</option>
               <option value="yearly">Yearly Plan - $160.00/Yearly</option>
             </select>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email used for your seller account"
-              className="h-11 border border-[var(--line)] bg-[var(--panel-soft)] px-3 text-sm outline-none transition placeholder:text-neutral-500 focus:border-[var(--line-strong)]"
-            />
             <button
               type="submit"
               disabled={loading}
