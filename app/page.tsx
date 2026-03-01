@@ -44,6 +44,32 @@ export default function Home() {
             </Link>
           </nav>
         </div>
+        <nav className="mx-auto grid max-w-7xl grid-cols-2 gap-2 px-5 pb-4 text-xs font-semibold uppercase tracking-[0.12em] md:hidden">
+          <Link
+            href="/subscribe"
+            className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
+          >
+            Post Listing
+          </Link>
+          <Link
+            href="/listings"
+            className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
+          >
+            Browse Equipment
+          </Link>
+          <Link
+            href="/messages"
+            className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
+          >
+            Messages
+          </Link>
+          <Link
+            href="/about"
+            className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
+          >
+            About
+          </Link>
+        </nav>
       </header>
 
       <main>
