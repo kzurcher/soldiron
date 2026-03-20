@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 export type ListingSubmissionInput = {
   listingType: string;
+  category: string;
   make: string;
   model: string;
   year: string;
@@ -36,7 +37,15 @@ const dbPath = path.join(dataDir, "listings.json");
 async function readListings(): Promise<StoredListingSubmission[]> {
   try {
     const raw = await readFile(dbPath, "utf8");
-    return JSON.parse(raw) as StoredListingSubmission[];
+    const parsed = JSON.parse(raw) as Array<
+      StoredListingSubmission | (Omit<StoredListingSubmission, "category"> & { category?: string })
+    >;
+    return parsed.map((listing) => ({
+      ...listing,
+      category:
+        listing.category ??
+        (listing.listingType === "truck" ? "truck" : "compact-equipment"),
+    }));
   } catch {
     return globalThis.soldironListingCache ?? [];
   }

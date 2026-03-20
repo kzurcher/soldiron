@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type ListingFormState = {
-  listingType: "equipment" | "attachment" | "truck";
+  listingType: "equipment" | "truck";
+  category: "dozer" | "excavator" | "compact-equipment" | "truck";
   make: string;
   model: string;
   year: string;
@@ -23,6 +24,7 @@ type ListingFormState = {
 
 const initialState: ListingFormState = {
   listingType: "equipment",
+  category: "dozer",
   make: "",
   model: "",
   year: "",
@@ -64,7 +66,7 @@ export default function ListMachinePage() {
     setPhotos((prev) => [...prev, ...Array.from(files)]);
   }
 
-  const usageLabel = form.listingType === "truck" ? "Miles" : "Operating Hours";
+  const usageLabel = form.category === "truck" ? "Miles" : "Operating Hours";
 
   useEffect(() => {
     async function hydrateAccess() {
@@ -111,6 +113,7 @@ export default function ListMachinePage() {
       const payload = new FormData();
       payload.append("make", form.make);
       payload.append("listingType", form.listingType);
+      payload.append("category", form.category);
       payload.append("model", form.model);
       payload.append("year", form.year);
       payload.append("operatingHours", form.operatingHours);
@@ -245,15 +248,21 @@ export default function ListMachinePage() {
               <h2 className="font-display text-2xl uppercase text-[var(--gold)]">Machine Details</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <select
-                  value={form.listingType}
-                  onChange={(e) =>
-                    updateField("listingType", e.target.value as ListingFormState["listingType"])
-                  }
+                  value={form.category}
+                  onChange={(e) => {
+                    const nextCategory = e.target.value as ListingFormState["category"];
+                    setForm((prev) => ({
+                      ...prev,
+                      category: nextCategory,
+                      listingType: nextCategory === "truck" ? "truck" : "equipment",
+                    }));
+                  }}
                   className={inputClassName}
                 >
-                  <option value="equipment">List Equipment</option>
-                  <option value="attachment">List Attachments</option>
-                  <option value="truck">List A Truck</option>
+                  <option value="dozer">Dozer</option>
+                  <option value="excavator">Excavator</option>
+                  <option value="compact-equipment">Compact Equipment</option>
+                  <option value="truck">Truck</option>
                 </select>
                 <input
                   type="text"

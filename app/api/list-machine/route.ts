@@ -10,6 +10,7 @@ import { isCloudinaryConfigured, uploadImageToCloudinary } from "@/lib/cloudinar
 function normalize(body: Partial<ListingSubmissionInput>): Omit<ListingSubmissionInput, "photoPaths"> {
   return {
     listingType: body.listingType?.trim() ?? "equipment",
+    category: body.category?.trim() ?? "compact-equipment",
     make: body.make?.trim() ?? "",
     model: body.model?.trim() ?? "",
     year: body.year?.trim() ?? "",
@@ -32,6 +33,9 @@ function validate(input: Omit<ListingSubmissionInput, "photoPaths">): string | n
   if (!["equipment", "attachment", "truck"].includes(input.listingType)) {
     return "Listing type is invalid.";
   }
+  if (!["dozer", "excavator", "compact-equipment", "truck"].includes(input.category)) {
+    return "Category is invalid.";
+  }
   if (!input.model) return "Model is required.";
   if (!input.year) return "Year is required.";
   if (!input.location) return "Location is required.";
@@ -51,6 +55,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const input = normalize({
       listingType: String(formData.get("listingType") ?? "equipment"),
+      category: String(formData.get("category") ?? "compact-equipment"),
       make: String(formData.get("make") ?? ""),
       model: String(formData.get("model") ?? ""),
       year: String(formData.get("year") ?? ""),

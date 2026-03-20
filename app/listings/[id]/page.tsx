@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 type ListingRecord = {
   id: string;
   listingType?: string;
+  category?: string;
   email?: string;
   make: string;
   model: string;
@@ -22,6 +23,22 @@ type ListingRecord = {
   companyName?: string;
   phoneNumber?: string;
 };
+
+function formatCategory(category?: string, listingType?: string): string {
+  const resolved = category ?? (listingType === "truck" ? "truck" : "compact-equipment");
+  switch (resolved) {
+    case "dozer":
+      return "Dozer";
+    case "excavator":
+      return "Excavator";
+    case "compact-equipment":
+      return "Compact Equipment";
+    case "truck":
+      return "Truck";
+    default:
+      return "Equipment";
+  }
+}
 
 export default function ListingDetailPage() {
   const params = useParams<{ id: string }>();
@@ -260,10 +277,10 @@ export default function ListingDetailPage() {
               )}
 
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--gold)]">
-                {listing.make}
+                {formatCategory(listing.category, listing.listingType)}
               </p>
               <h2 className="mt-2 text-3xl font-semibold">
-                {listing.model} {listing.year ? `(${listing.year})` : ""}
+                {listing.make} {listing.model} {listing.year ? `(${listing.year})` : ""}
               </h2>
               <p className="mt-2 text-sm text-[var(--muted)]">{listing.location}</p>
               <p className="mt-4 text-sm leading-6 text-[var(--muted)]">{listing.description}</p>

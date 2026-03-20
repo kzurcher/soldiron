@@ -30,9 +30,31 @@ export default function Home() {
             <Link href="/subscribe" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Post Listing
             </Link>
-            <Link href="/listings" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
-              Browse All Equipment
-            </Link>
+            <div className="group relative">
+              <button
+                type="button"
+                className="text-[var(--muted)] transition group-hover:text-[var(--gold)]"
+              >
+                Browse Equipment
+              </button>
+              <div className="invisible absolute left-1/2 top-full z-20 mt-3 w-56 -translate-x-1/2 border border-[var(--line)] bg-[var(--panel)] p-2 opacity-0 shadow-industrial transition group-hover:visible group-hover:opacity-100">
+                <Link href="/listings?category=dozer" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                  Dozers
+                </Link>
+                <Link href="/listings?category=excavator" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                  Excavators
+                </Link>
+                <Link href="/listings?category=compact-equipment" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                  Compact Equipment
+                </Link>
+                <Link href="/listings?category=truck" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                  Trucks
+                </Link>
+                <Link href="/listings" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                  Browse All
+                </Link>
+              </div>
+            </div>
             <Link href="/messages" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Messages
             </Link>
@@ -51,12 +73,28 @@ export default function Home() {
           >
             Post Listing
           </Link>
-          <Link
-            href="/listings"
-            className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
-          >
-            Browse Equipment
-          </Link>
+          <details className="border border-[var(--line)]">
+            <summary className="cursor-pointer list-none px-3 py-2 text-center text-[var(--muted)] transition hover:text-[var(--gold)]">
+              Browse Equipment
+            </summary>
+            <div className="grid border-t border-[var(--line)] bg-[var(--panel)]">
+              <Link href="/listings?category=dozer" className="px-3 py-2 text-center text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                Dozers
+              </Link>
+              <Link href="/listings?category=excavator" className="px-3 py-2 text-center text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                Excavators
+              </Link>
+              <Link href="/listings?category=compact-equipment" className="px-3 py-2 text-center text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                Compact Equipment
+              </Link>
+              <Link href="/listings?category=truck" className="px-3 py-2 text-center text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                Trucks
+              </Link>
+              <Link href="/listings" className="px-3 py-2 text-center text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                Browse All
+              </Link>
+            </div>
+          </details>
           <Link
             href="/messages"
             className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"

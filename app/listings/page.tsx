@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 type ListingRecord = {
   id: string;
   listingType?: string;
+  category?: string;
   make: string;
   model: string;
   year: string;
@@ -24,6 +25,22 @@ type ListingRecord = {
 type DistanceListing = ListingRecord & { distanceMiles: number | null };
 
 const rangeOptions = [25, 50, 100, 250, 500, 99999];
+const categoryOptions = ["all", "dozer", "excavator", "compact-equipment", "truck"] as const;
+
+function formatCategory(category: string): string {
+  switch (category) {
+    case "dozer":
+      return "Dozers";
+    case "excavator":
+      return "Excavators";
+    case "compact-equipment":
+      return "Compact Equipment";
+    case "truck":
+      return "Trucks";
+    default:
+      return "Browse All";
+  }
+}
 
 function toNumber(value?: string): number | null {
   if (!value) return null;
@@ -55,9 +72,20 @@ export default function ListingsPage() {
   const [accessChecked, setAccessChecked] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
   const [rangeMiles, setRangeMiles] = useState(100);
+  const [selectedCategory, setSelectedCategory] = useState<(typeof categoryOptions)[number]>("all");
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
+
+  useEffect(() => {
+    const requestedCategory =
+      typeof window !== "undefined" ? new URL(window.location.href).searchParams.get("category") : null;
+    if (requestedCategory && categoryOptions.includes(requestedCategory as (typeof categoryOptions)[number])) {
+      setSelectedCategory(requestedCategory as (typeof categoryOptions)[number]);
+      return;
+    }
+    setSelectedCategory("all");
+  }, []);
 
   useEffect(() => {
     async function verifyAndLoadListings() {
@@ -149,12 +177,21 @@ export default function ListingsPage() {
   }, [listings, userLocation]);
 
   const visibleListings = useMemo(() => {
-    if (!userLocation) return listingsWithDistance;
-    if (rangeMiles === 99999) return listingsWithDistance;
-    return listingsWithDistance.filter(
+    const categoryFiltered =
+      selectedCategory === "all"
+        ? listingsWithDistance
+        : listingsWithDistance.filter(
+            (listing) =>
+              (listing.category ?? (listing.listingType === "truck" ? "truck" : "compact-equipment")) ===
+              selectedCategory
+          );
+
+    if (!userLocation) return categoryFiltered;
+    if (rangeMiles === 99999) return categoryFiltered;
+    return categoryFiltered.filter(
       (listing) => listing.distanceMiles !== null && listing.distanceMiles <= rangeMiles
     );
-  }, [listingsWithDistance, rangeMiles, userLocation]);
+  }, [listingsWithDistance, rangeMiles, selectedCategory, userLocation]);
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -205,6 +242,23 @@ export default function ListingsPage() {
             </button>
 
             <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+              Category
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) =>
+                setSelectedCategory(e.target.value as (typeof categoryOptions)[number])
+              }
+              className="h-10 border border-[var(--line)] bg-[var(--panel-soft)] px-3 text-sm outline-none focus:border-[var(--line-strong)]"
+            >
+              {categoryOptions.map((category) => (
+                <option key={category} value={category}>
+                  {formatCategory(category)}
+                </option>
+              ))}
+            </select>
+
+            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
               Mile Range
             </label>
             <select
@@ -220,15 +274,16 @@ export default function ListingsPage() {
             </select>
           </div>
 
-          {!userLocation && (
-            <p className="mt-3 text-sm text-[var(--muted)]">
-              Enable location to filter listings by distance.
-            </p>
-          )}
           {locationError && <p className="mt-3 text-sm text-red-400">{locationError}</p>}
           {userLocation && (
             <p className="mt-3 text-sm text-[var(--gold)]">
-              Showing equipment within {rangeMiles} miles of your current location.
+              Showing {formatCategory(selectedCategory).toLowerCase()} within{" "}
+              {rangeMiles === 99999 ? "any distance" : `${rangeMiles} miles`} of your current location.
+            </p>
+          )}
+          {!userLocation && (
+            <p className="mt-3 text-sm text-[var(--gold)]">
+              Viewing {formatCategory(selectedCategory).toLowerCase()} across all saved listings.
             </p>
           )}
         </section>
@@ -278,10 +333,12 @@ export default function ListingsPage() {
                   )}
                 </div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--gold)]">
-                  {listing.make}
+                  {formatCategory(
+                    listing.category ?? (listing.listingType === "truck" ? "truck" : "compact-equipment")
+                  )}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold">
-                  {listing.model} {listing.year ? `(${listing.year})` : ""}
+                  {listing.make} {listing.model} {listing.year ? `(${listing.year})` : ""}
                 </h2>
                 <p className="mt-2 text-sm text-[var(--muted)]">{listing.location}</p>
                 {listing.distanceMiles !== null && (
