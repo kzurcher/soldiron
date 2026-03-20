@@ -38,8 +38,11 @@ export default function RefundPolicyPage() {
             </p>
             <p>
               If you believe you were charged in error, contact{" "}
-              <a href="mailto:kohlzurcher@gmail.com" className="text-[var(--gold)] hover:underline">
-                kohlzurcher@gmail.com
+              <a
+                href="mailto:soldironmarketplace@gmail.com"
+                className="text-[var(--gold)] hover:underline"
+              >
+                soldironmarketplace@gmail.com
               </a>
               {" "}for review.
             </p>

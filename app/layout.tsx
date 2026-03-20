@@ -38,8 +38,11 @@ export default function RootLayout({
               </p>
               <p className="mt-4 text-sm text-[var(--muted)]">
                 Customer support:{" "}
-                <a href="mailto:kohlzurcher@gmail.com" className="text-[var(--gold)] hover:underline">
-                  kohlzurcher@gmail.com
+                <a
+                  href="mailto:soldironmarketplace@gmail.com"
+                  className="text-[var(--gold)] hover:underline"
+                >
+                  soldironmarketplace@gmail.com
                 </a>
               </p>
             </div>

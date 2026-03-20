@@ -43,8 +43,11 @@ export default function PrivacyPage() {
             </p>
             <p>
               If you need to update or remove your account information, contact{" "}
-              <a href="mailto:kohlzurcher@gmail.com" className="text-[var(--gold)] hover:underline">
-                kohlzurcher@gmail.com
+              <a
+                href="mailto:soldironmarketplace@gmail.com"
+                className="text-[var(--gold)] hover:underline"
+              >
+                soldironmarketplace@gmail.com
               </a>
               .
             </p>

@@ -31,8 +31,11 @@ export default function ContactPage() {
             <p>
               For account questions, subscription issues, listing support, or transaction-related
               concerns, contact us at{" "}
-              <a href="mailto:kohlzurcher@gmail.com" className="text-[var(--gold)] hover:underline">
-                kohlzurcher@gmail.com
+              <a
+                href="mailto:soldironmarketplace@gmail.com"
+                className="text-[var(--gold)] hover:underline"
+              >
+                soldironmarketplace@gmail.com
               </a>
               .
             </p>
