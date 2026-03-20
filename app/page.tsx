@@ -33,7 +33,7 @@ export default function Home() {
             <div className="group relative">
               <button
                 type="button"
-                className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--muted)] transition group-hover:text-[var(--gold)]"
+                className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--text)] transition group-hover:text-[var(--gold)]"
               >
                 Browse Equipment
               </button>
