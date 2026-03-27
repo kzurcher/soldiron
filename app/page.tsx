@@ -37,22 +37,24 @@ export default function Home() {
               >
                 Browse Equipment
               </button>
-              <div className="invisible absolute left-1/2 top-full z-20 mt-3 w-56 -translate-x-1/2 border border-[var(--line)] bg-[var(--panel)] p-2 opacity-0 shadow-industrial transition group-hover:visible group-hover:opacity-100">
-                <Link href="/listings?category=dozer" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
-                  Dozers
-                </Link>
-                <Link href="/listings?category=excavator" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
-                  Excavators
-                </Link>
-                <Link href="/listings?category=compact-equipment" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
-                  Compact Equipment
-                </Link>
-                <Link href="/listings?category=truck" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
-                  Trucks
-                </Link>
-                <Link href="/listings" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
-                  Browse All
-                </Link>
+              <div className="invisible absolute left-1/2 top-full z-20 w-56 -translate-x-1/2 pt-3 opacity-0 transition group-hover:visible group-hover:opacity-100">
+                <div className="border border-[var(--line)] bg-[var(--panel)] p-2 shadow-industrial">
+                  <Link href="/listings?category=dozer" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                    Dozers
+                  </Link>
+                  <Link href="/listings?category=excavator" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                    Excavators
+                  </Link>
+                  <Link href="/listings?category=compact-equipment" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                    Compact Equipment
+                  </Link>
+                  <Link href="/listings?category=truck" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                    Trucks
+                  </Link>
+                  <Link href="/listings" className="block px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--panel-soft)] hover:text-[var(--gold)]">
+                    Browse All
+                  </Link>
+                </div>
               </div>
             </div>
             <Link href="/messages" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
