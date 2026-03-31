@@ -38,7 +38,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Phone number is required." }, { status: 400 });
     }
 
-    await upsertUserProfile({ email, fullName, phoneNumber });
+    console.info("[billing/checkout] received request", {
+      email,
+      plan,
+      hasFullName: Boolean(fullName),
+      hasPhoneNumber: Boolean(phoneNumber),
+    });
+
+    const profile = await upsertUserProfile({ email, fullName, phoneNumber });
+    console.info("[billing/checkout] upserted user profile", {
+      email: profile.email,
+      updatedAt: profile.updatedAt,
+    });
 
     const selectedPriceId = plan === "yearly" ? yearlyPriceId || priceId : priceId;
 
@@ -60,14 +71,27 @@ export async function POST(request: Request) {
     const result = (await response.json()) as { url?: string; error?: { message?: string } };
 
     if (!response.ok || !result.url) {
+      console.error("[billing/checkout] stripe checkout creation failed", {
+        email,
+        status: response.status,
+        error: result.error?.message ?? "unknown_stripe_error",
+      });
       return NextResponse.json(
         { ok: false, error: result.error?.message ?? "Could not create checkout session." },
         { status: 400 }
       );
     }
 
+    console.info("[billing/checkout] created stripe checkout session", {
+      email,
+      status: response.status,
+    });
+
     return NextResponse.json({ ok: true, url: result.url });
-  } catch {
+  } catch (error) {
+    console.error("[billing/checkout] unexpected failure", {
+      error: error instanceof Error ? error.message : "unknown_error",
+    });
     return NextResponse.json(
       { ok: false, error: "Could not start subscription checkout." },
       { status: 500 }
