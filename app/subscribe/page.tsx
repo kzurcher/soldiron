@@ -13,16 +13,37 @@ export default function SubscribePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("soldiron_user_profile");
-      if (!raw) return;
-      const profile = JSON.parse(raw) as { fullName?: string; phoneNumber?: string; email?: string };
-      setFullName(profile.fullName ?? "");
-      setPhoneNumber(profile.phoneNumber ?? "");
-      setEmail(profile.email ?? "");
-    } catch {
-      // Ignore malformed local profile.
+    async function hydrateProfile() {
+      try {
+        const sessionResponse = await fetch("/api/session");
+        const sessionResult = (await sessionResponse.json()) as {
+          ok?: boolean;
+          authenticated?: boolean;
+          session?: { email?: string; fullName?: string; phoneNumber?: string };
+        };
+        if (sessionResponse.ok && sessionResult.authenticated && sessionResult.session) {
+          setFullName(sessionResult.session.fullName ?? "");
+          setPhoneNumber(sessionResult.session.phoneNumber ?? "");
+          setEmail(sessionResult.session.email ?? "");
+          return;
+        }
+      } catch {
+        // Fall back to local browser draft values.
+      }
+
+      try {
+        const raw = localStorage.getItem("soldiron_user_profile");
+        if (!raw) return;
+        const profile = JSON.parse(raw) as { fullName?: string; phoneNumber?: string; email?: string };
+        setFullName(profile.fullName ?? "");
+        setPhoneNumber(profile.phoneNumber ?? "");
+        setEmail(profile.email ?? "");
+      } catch {
+        // Ignore malformed local profile.
+      }
     }
+
+    void hydrateProfile();
   }, []);
 
   async function onSubscribe(event: React.FormEvent<HTMLFormElement>) {
@@ -45,7 +66,12 @@ export default function SubscribePage() {
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail, plan }),
+        body: JSON.stringify({
+          email: normalizedEmail,
+          plan,
+          fullName: fullName.trim(),
+          phoneNumber: phoneNumber.trim(),
+        }),
       });
       const result = (await response.json()) as { ok: boolean; url?: string; error?: string };
       if (!response.ok || !result.ok || !result.url) {
@@ -54,7 +80,6 @@ export default function SubscribePage() {
       }
 
       setMessage("Redirecting to secure checkout...");
-      localStorage.setItem("soldiron_subscriber_email", normalizedEmail);
       window.location.href = result.url;
     } catch {
       setError("Could not start checkout.");

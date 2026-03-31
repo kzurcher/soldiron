@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import { getSessionFromCookies } from "@/lib/session";
 import { getMessagesForSeller, saveMessage } from "@/lib/message-store";
 import { isEmailConfigured, sendEmailNotification } from "@/lib/email";
+import { getSubscriptionByEmail } from "@/lib/subscription-store";
+import { getUserProfileByEmail } from "@/lib/user-profile-store";
 
 type MessageRequest = {
   listingId?: string;
@@ -19,10 +22,15 @@ function clean(value: string | undefined): string {
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const sellerEmail = clean(searchParams.get("email") ?? undefined).toLowerCase();
+    const session = await getSessionFromCookies();
+    const sellerEmail = clean(session?.email).toLowerCase();
     if (!sellerEmail) {
-      return NextResponse.json({ ok: false, error: "Email is required." }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Authentication required." }, { status: 401 });
+    }
+
+    const subscription = await getSubscriptionByEmail(sellerEmail);
+    if (subscription?.status !== "active") {
+      return NextResponse.json({ ok: false, error: "Active subscription required." }, { status: 402 });
     }
 
     const messages = await getMessagesForSeller(sellerEmail);
@@ -34,22 +42,34 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getSessionFromCookies();
+    const senderEmail = clean(session?.email).toLowerCase();
+    if (!senderEmail) {
+      return NextResponse.json({ ok: false, error: "Authentication required." }, { status: 401 });
+    }
+
+    const subscription = await getSubscriptionByEmail(senderEmail);
+    if (subscription?.status !== "active") {
+      return NextResponse.json({ ok: false, error: "Active subscription required." }, { status: 402 });
+    }
+
+    const profile = await getUserProfileByEmail(senderEmail);
     const body = (await request.json()) as MessageRequest;
     const payload = {
       listingId: clean(body.listingId),
       listingTitle: clean(body.listingTitle),
       sellerName: clean(body.sellerName),
       sellerEmail: clean(body.sellerEmail).toLowerCase(),
-      senderName: clean(body.senderName),
-      senderPhone: clean(body.senderPhone),
-      senderEmail: clean(body.senderEmail).toLowerCase(),
+      senderName: clean(profile?.fullName ?? session?.fullName),
+      senderPhone: clean(profile?.phoneNumber ?? session?.phoneNumber),
+      senderEmail,
       message: clean(body.message),
     };
 
     if (!payload.listingId) return NextResponse.json({ ok: false, error: "Listing id is required." }, { status: 400 });
     if (!payload.sellerEmail) return NextResponse.json({ ok: false, error: "Seller email is required." }, { status: 400 });
-    if (!payload.senderName) return NextResponse.json({ ok: false, error: "Your name is required." }, { status: 400 });
-    if (!payload.senderPhone) return NextResponse.json({ ok: false, error: "Your phone is required." }, { status: 400 });
+    if (!payload.senderName) return NextResponse.json({ ok: false, error: "Your profile is missing a full name." }, { status: 400 });
+    if (!payload.senderPhone) return NextResponse.json({ ok: false, error: "Your profile is missing a phone number." }, { status: 400 });
     if (!payload.message) return NextResponse.json({ ok: false, error: "Message is required." }, { status: 400 });
 
     const saved = await saveMessage(payload);

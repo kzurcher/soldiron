@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripeConfig, stripePostForm } from "@/lib/stripe";
+import { upsertUserProfile } from "@/lib/user-profile-store";
 
 export async function POST(request: Request) {
   try {
@@ -17,12 +18,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await request.json()) as { email?: string; plan?: "monthly" | "yearly" };
+    const body = (await request.json()) as {
+      email?: string;
+      plan?: "monthly" | "yearly";
+      fullName?: string;
+      phoneNumber?: string;
+    };
     const email = body.email?.trim().toLowerCase() ?? "";
     const plan = body.plan === "yearly" ? "yearly" : "monthly";
+    const fullName = body.fullName?.trim() ?? "";
+    const phoneNumber = body.phoneNumber?.trim() ?? "";
     if (!email) {
       return NextResponse.json({ ok: false, error: "Email is required." }, { status: 400 });
     }
+    if (!fullName) {
+      return NextResponse.json({ ok: false, error: "Full name is required." }, { status: 400 });
+    }
+    if (!phoneNumber) {
+      return NextResponse.json({ ok: false, error: "Phone number is required." }, { status: 400 });
+    }
+
+    await upsertUserProfile({ email, fullName, phoneNumber });
 
     const selectedPriceId = plan === "yearly" ? yearlyPriceId || priceId : priceId;
 
@@ -33,6 +49,12 @@ export async function POST(request: Request) {
     params.set("line_items[0][price]", selectedPriceId);
     params.set("line_items[0][quantity]", "1");
     params.set("customer_email", email);
+    params.set("metadata[email]", email);
+    params.set("metadata[fullName]", fullName);
+    params.set("metadata[phoneNumber]", phoneNumber);
+    params.set("subscription_data[metadata][email]", email);
+    params.set("subscription_data[metadata][fullName]", fullName);
+    params.set("subscription_data[metadata][phoneNumber]", phoneNumber);
 
     const response = await stripePostForm("/checkout/sessions", params, secretKey);
     const result = (await response.json()) as { url?: string; error?: { message?: string } };

@@ -47,7 +47,6 @@ const inputClassName =
 export default function ListMachinePage() {
   const [form, setForm] = useState<ListingFormState>(initialState);
   const [photos, setPhotos] = useState<File[]>([]);
-  const [checkoutSessionId, setCheckoutSessionId] = useState("");
   const [accessChecked, setAccessChecked] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -70,30 +69,23 @@ export default function ListMachinePage() {
 
   useEffect(() => {
     async function hydrateAccess() {
-      const url = new URL(window.location.href);
-      const sessionFromUrl = url.searchParams.get("session_id") ?? "";
-      const sessionFromStorage = localStorage.getItem("soldiron_checkout_session_id") ?? "";
-      const resolvedSession = sessionFromUrl || sessionFromStorage;
-      setCheckoutSessionId(resolvedSession);
-      if (sessionFromUrl) {
-        localStorage.setItem("soldiron_checkout_session_id", sessionFromUrl);
-      }
-
-      const email = (localStorage.getItem("soldiron_subscriber_email") ?? "").toLowerCase();
-      if (email) {
-        setForm((prev) => ({ ...prev, email }));
-      }
-
-      if (!email) {
-        setHasAccess(false);
-        setAccessChecked(true);
-        return;
-      }
-
       try {
-        const response = await fetch(`/api/billing/status?email=${encodeURIComponent(email)}`);
-        const result = (await response.json()) as { ok: boolean; active?: boolean };
-        setHasAccess(Boolean(response.ok && result.ok && result.active));
+        const response = await fetch("/api/billing/status");
+        const result = (await response.json()) as {
+          ok?: boolean;
+          active?: boolean;
+          session?: { email?: string; fullName?: string; phoneNumber?: string };
+        };
+        const active = Boolean(response.ok && result.ok && result.active);
+        setHasAccess(active);
+        if (result.session) {
+          setForm((prev) => ({
+            ...prev,
+            email: result.session?.email ?? "",
+            fullName: result.session?.fullName ?? "",
+            phoneNumber: result.session?.phoneNumber ?? "",
+          }));
+        }
       } catch {
         setHasAccess(false);
       } finally {
@@ -125,9 +117,7 @@ export default function ListMachinePage() {
       payload.append("description", form.description);
       payload.append("fullName", form.fullName);
       payload.append("companyName", form.companyName);
-      payload.append("email", form.email);
       payload.append("phoneNumber", form.phoneNumber);
-      payload.append("checkoutSessionId", checkoutSessionId);
       photos.forEach((file) => payload.append("photos", file));
 
       const response = await fetch("/api/list-machine", {
@@ -396,7 +386,7 @@ export default function ListMachinePage() {
                   type="email"
                   placeholder="Email Address"
                   value={form.email}
-                  onChange={(e) => updateField("email", e.target.value)}
+                  readOnly
                   className={inputClassName}
                 />
                 <input

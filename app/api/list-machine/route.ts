@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { randomUUID } from "node:crypto";
 import { saveListingSubmission, type ListingSubmissionInput } from "@/lib/listing-store";
-import { getStripeSubscriptionDebug, isCheckoutSessionActiveForEmail } from "@/lib/stripe";
+import { getStripeSubscriptionDebug } from "@/lib/stripe";
+import { getSessionFromCookies } from "@/lib/session";
 import { getSubscriptionByEmail } from "@/lib/subscription-store";
 import { isCloudinaryConfigured, uploadImageToCloudinary } from "@/lib/cloudinary";
+import { getUserProfileByEmail } from "@/lib/user-profile-store";
 
 function normalize(body: Partial<ListingSubmissionInput>): Omit<ListingSubmissionInput, "photoPaths"> {
   return {
@@ -52,7 +51,16 @@ function cleanFilename(name: string): string {
 
 export async function POST(request: Request) {
   try {
+    const session = await getSessionFromCookies();
+    if (!session?.email) {
+      return NextResponse.json(
+        { ok: false, error: "You must be signed in with an active subscription." },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
+    const profile = await getUserProfileByEmail(session.email);
     const input = normalize({
       listingType: String(formData.get("listingType") ?? "equipment"),
       category: String(formData.get("category") ?? "compact-equipment"),
@@ -66,12 +74,11 @@ export async function POST(request: Request) {
       longitude: String(formData.get("longitude") ?? ""),
       askingPrice: String(formData.get("askingPrice") ?? ""),
       description: String(formData.get("description") ?? ""),
-      fullName: String(formData.get("fullName") ?? ""),
+      fullName: String(formData.get("fullName") ?? profile?.fullName ?? session.fullName ?? ""),
       companyName: String(formData.get("companyName") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phoneNumber: String(formData.get("phoneNumber") ?? ""),
+      email: session.email,
+      phoneNumber: String(formData.get("phoneNumber") ?? profile?.phoneNumber ?? session.phoneNumber ?? ""),
     });
-    const checkoutSessionId = String(formData.get("checkoutSessionId") ?? "");
     const error = validate(input);
 
     if (error) {
@@ -80,10 +87,7 @@ export async function POST(request: Request) {
 
     const localSub = await getSubscriptionByEmail(input.email);
     const subscriptionDebug = await getStripeSubscriptionDebug(input.email);
-    const checkoutSessionActive = checkoutSessionId
-      ? await isCheckoutSessionActiveForEmail(checkoutSessionId, input.email)
-      : false;
-    const isActive = localSub?.status === "active" || subscriptionDebug.active || checkoutSessionActive;
+    const isActive = localSub?.status === "active" || subscriptionDebug.active;
     if (!isActive) {
       return NextResponse.json(
         {
@@ -94,7 +98,6 @@ export async function POST(request: Request) {
             reason: subscriptionDebug.reason,
             customerCount: subscriptionDebug.customerCount,
             statuses: subscriptionDebug.statuses,
-            checkoutSessionActive,
           },
         },
         { status: 402 }

@@ -60,29 +60,33 @@ export default function ListingDetailPage() {
   const [messageStatus, setMessageStatus] = useState("");
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("soldiron_user_profile");
-      const profile = raw
-        ? (JSON.parse(raw) as { fullName?: string; phoneNumber?: string; email?: string })
-        : null;
-      const savedEmail = localStorage.getItem("soldiron_subscriber_email") ?? "";
-      setMessageForm((prev) => ({
-        ...prev,
-        message: "",
-      }));
-      setBuyerProfile({
-        senderName: profile?.fullName ?? "",
-        senderPhone: profile?.phoneNumber ?? "",
-        senderEmail: profile?.email ?? savedEmail,
-      });
-    } catch {
-      const savedEmail = localStorage.getItem("soldiron_subscriber_email") ?? "";
+    async function hydrateProfile() {
+      try {
+        const response = await fetch("/api/session");
+        const result = (await response.json()) as {
+          authenticated?: boolean;
+          session?: { fullName?: string; phoneNumber?: string; email?: string };
+        };
+        if (response.ok && result.authenticated && result.session) {
+          setBuyerProfile({
+            senderName: result.session.fullName ?? "",
+            senderPhone: result.session.phoneNumber ?? "",
+            senderEmail: result.session.email ?? "",
+          });
+          return;
+        }
+      } catch {
+        // Ignore and show empty identity until session resolves.
+      }
+
       setBuyerProfile({
         senderName: "",
         senderPhone: "",
-        senderEmail: savedEmail,
+        senderEmail: "",
       });
     }
+
+    void hydrateProfile();
   }, []);
 
   useEffect(() => {
@@ -90,15 +94,7 @@ export default function ListingDetailPage() {
 
     async function verifyAndLoadListing() {
       try {
-        const email = localStorage.getItem("soldiron_subscriber_email") ?? "";
-        if (!email) {
-          setHasAccess(false);
-          setAccessChecked(true);
-          setLoading(false);
-          return;
-        }
-
-        const statusResponse = await fetch(`/api/billing/status?email=${encodeURIComponent(email)}`);
+        const statusResponse = await fetch("/api/billing/status");
         const statusResult = (await statusResponse.json()) as { ok: boolean; active?: boolean };
         if (!statusResponse.ok || !statusResult.ok || !statusResult.active) {
           setHasAccess(false);
@@ -165,9 +161,6 @@ export default function ListingDetailPage() {
           listingTitle: `${listing.make} ${listing.model} ${listing.year ? `(${listing.year})` : ""}`.trim(),
           sellerName: listing.fullName ?? "",
           sellerEmail: listing.email,
-          senderName: buyerProfile.senderName,
-          senderPhone: buyerProfile.senderPhone,
-          senderEmail: buyerProfile.senderEmail,
           message: messageForm.message,
         }),
       });
@@ -313,8 +306,8 @@ export default function ListingDetailPage() {
                 Send your interest directly from this listing page.
               </p>
               <p className="mt-2 text-xs text-[var(--muted)]">
-                Sending as {buyerProfile.senderName || "Unknown"} •{" "}
-                {buyerProfile.senderPhone || "No phone"} • {buyerProfile.senderEmail || "No email"}
+                Sending as {buyerProfile.senderName || "Unknown"} |{" "}
+                {buyerProfile.senderPhone || "No phone"} | {buyerProfile.senderEmail || "No email"}
               </p>
 
               <div className="mt-4 grid gap-2">

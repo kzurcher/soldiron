@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
 export type SubscriptionRecord = {
   email: string;
@@ -18,6 +19,27 @@ const dataDir = path.join(process.cwd(), "data");
 const dbPath = path.join(dataDir, "subscriptions.json");
 
 async function readSubscriptions(): Promise<SubscriptionRecord[]> {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("email, stripe_customer_id, stripe_subscription_id, status, plan_name, updated_at")
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((record) => ({
+      email: record.email,
+      stripeCustomerId: record.stripe_customer_id ?? undefined,
+      stripeSubscriptionId: record.stripe_subscription_id ?? undefined,
+      status: record.status,
+      planName: record.plan_name,
+      updatedAt: record.updated_at,
+    }));
+  }
+
   try {
     const raw = await readFile(dbPath, "utf8");
     return JSON.parse(raw) as SubscriptionRecord[];
@@ -27,6 +49,23 @@ async function readSubscriptions(): Promise<SubscriptionRecord[]> {
 }
 
 async function writeSubscriptions(records: SubscriptionRecord[]): Promise<void> {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    const payload = records.map((record) => ({
+      email: record.email,
+      stripe_customer_id: record.stripeCustomerId ?? null,
+      stripe_subscription_id: record.stripeSubscriptionId ?? null,
+      status: record.status,
+      plan_name: record.planName,
+      updated_at: record.updatedAt,
+    }));
+    const { error } = await supabase.from("subscriptions").upsert(payload, { onConflict: "email" });
+    if (error) {
+      throw new Error(error.message);
+    }
+    return;
+  }
+
   globalThis.soldironSubscriptionCache = records;
   try {
     await mkdir(dataDir, { recursive: true });
@@ -39,6 +78,39 @@ async function writeSubscriptions(records: SubscriptionRecord[]): Promise<void> 
 export async function upsertSubscription(
   next: Omit<SubscriptionRecord, "updatedAt">
 ): Promise<SubscriptionRecord> {
+  if (isSupabaseConfigured()) {
+    const now = new Date().toISOString();
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .upsert(
+        {
+          email: next.email.trim().toLowerCase(),
+          stripe_customer_id: next.stripeCustomerId ?? null,
+          stripe_subscription_id: next.stripeSubscriptionId ?? null,
+          status: next.status,
+          plan_name: next.planName,
+          updated_at: now,
+        },
+        { onConflict: "email" }
+      )
+      .select("email, stripe_customer_id, stripe_subscription_id, status, plan_name, updated_at")
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? "Could not upsert subscription.");
+    }
+
+    return {
+      email: data.email,
+      stripeCustomerId: data.stripe_customer_id ?? undefined,
+      stripeSubscriptionId: data.stripe_subscription_id ?? undefined,
+      status: data.status,
+      planName: data.plan_name,
+      updatedAt: data.updated_at,
+    };
+  }
+
   const records = await readSubscriptions();
   const now = new Date().toISOString();
 
@@ -66,6 +138,29 @@ export async function upsertSubscription(
 }
 
 export async function getSubscriptionByEmail(email: string): Promise<SubscriptionRecord | null> {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("email, stripe_customer_id, stripe_subscription_id, status, plan_name, updated_at")
+      .eq("email", email.trim().toLowerCase())
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) return null;
+    return {
+      email: data.email,
+      stripeCustomerId: data.stripe_customer_id ?? undefined,
+      stripeSubscriptionId: data.stripe_subscription_id ?? undefined,
+      status: data.status,
+      planName: data.plan_name,
+      updatedAt: data.updated_at,
+    };
+  }
+
   const records = await readSubscriptions();
   const match = records.find((record) => record.email.toLowerCase() === email.toLowerCase());
   return match ?? null;
@@ -75,6 +170,18 @@ export async function updateSubscriptionStatusByStripeId(
   stripeSubscriptionId: string,
   status: SubscriptionRecord["status"]
 ): Promise<void> {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("stripe_subscription_id", stripeSubscriptionId);
+    if (error) {
+      throw new Error(error.message);
+    }
+    return;
+  }
+
   const records = await readSubscriptions();
   const idx = records.findIndex((record) => record.stripeSubscriptionId === stripeSubscriptionId);
   if (idx < 0) return;

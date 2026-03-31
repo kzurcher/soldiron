@@ -41,8 +41,8 @@ export default function MessageThreadPage() {
   const [replying, setReplying] = useState(false);
   const [replyStatus, setReplyStatus] = useState("");
 
-  async function loadThread(email: string, id: string) {
-    const response = await fetch(`/api/messages/${id}?email=${encodeURIComponent(email)}`);
+  async function loadThread(id: string) {
+    const response = await fetch(`/api/messages/${id}`);
     const result = (await response.json()) as {
       ok: boolean;
       message?: MessageRecord;
@@ -58,19 +58,13 @@ export default function MessageThreadPage() {
     if (!messageId) return;
 
     async function verifyAndLoadThread() {
-      const email = (localStorage.getItem("soldiron_subscriber_email") ?? "").toLowerCase();
-      setSubscriberEmail(email);
-
-      if (!email) {
-        setHasAccess(false);
-        setAccessChecked(true);
-        setLoading(false);
-        return;
-      }
-
       try {
-        const statusResponse = await fetch(`/api/billing/status?email=${encodeURIComponent(email)}`);
-        const statusResult = (await statusResponse.json()) as { ok: boolean; active?: boolean };
+        const statusResponse = await fetch("/api/billing/status");
+        const statusResult = (await statusResponse.json()) as {
+          ok: boolean;
+          active?: boolean;
+          session?: { email?: string };
+        };
         if (!statusResponse.ok || !statusResult.ok || !statusResult.active) {
           setHasAccess(false);
           setAccessChecked(true);
@@ -78,6 +72,7 @@ export default function MessageThreadPage() {
           return;
         }
 
+        setSubscriberEmail(statusResult.session?.email ?? "");
         setHasAccess(true);
         setAccessChecked(true);
       } catch {
@@ -88,7 +83,7 @@ export default function MessageThreadPage() {
       }
 
       try {
-        await loadThread(email, messageId);
+        await loadThread(messageId);
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Could not load this message thread.";
@@ -120,7 +115,6 @@ export default function MessageThreadPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sellerEmail: subscriberEmail,
           reply: draft,
         }),
       });
@@ -142,7 +136,7 @@ export default function MessageThreadPage() {
           ? "Reply sent and buyer notified by email."
           : "Reply sent on-site."
       );
-      await loadThread(subscriberEmail, thread.id);
+      await loadThread(thread.id);
     } catch {
       setReplyStatus("Could not send reply.");
     } finally {
@@ -206,7 +200,7 @@ export default function MessageThreadPage() {
             <div className="mt-4 border-t border-[var(--line)] pt-4">
               <div className="rounded border border-[var(--line)] bg-[var(--panel-soft)] px-3 py-3">
                 <p className="text-[11px] uppercase tracking-[0.1em] text-[var(--muted)]">
-                  Buyer Message • {thread.senderName} • {thread.senderPhone}
+                  Buyer Message | {thread.senderName} | {thread.senderPhone}
                 </p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">
                   {thread.message}
@@ -224,7 +218,7 @@ export default function MessageThreadPage() {
                         className="rounded border border-[var(--line)] bg-[var(--bg)] px-3 py-3"
                       >
                         <p className="text-[11px] uppercase tracking-[0.1em] text-[var(--muted)]">
-                          Seller Reply • {formatDate(reply.createdAt)}
+                          Seller Reply | {formatDate(reply.createdAt)}
                         </p>
                         <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">
                           {reply.reply}

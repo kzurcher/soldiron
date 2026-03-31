@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { isEmailConfigured, sendEmailNotification } from "@/lib/email";
 import { saveMessageReply } from "@/lib/message-store";
+import { getSessionFromCookies } from "@/lib/session";
+import { getSubscriptionByEmail } from "@/lib/subscription-store";
 
 type ReplyRequest = {
   sellerEmail?: string;
@@ -19,14 +21,20 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const body = (await request.json()) as ReplyRequest;
-    const sellerEmail = clean(body.sellerEmail).toLowerCase();
+    const session = await getSessionFromCookies();
+    const sellerEmail = clean(session?.email).toLowerCase();
     const reply = clean(body.reply);
 
     if (!id) return NextResponse.json({ ok: false, error: "Message id is required." }, { status: 400 });
     if (!sellerEmail) {
-      return NextResponse.json({ ok: false, error: "Seller email is required." }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Authentication required." }, { status: 401 });
     }
     if (!reply) return NextResponse.json({ ok: false, error: "Reply is required." }, { status: 400 });
+
+    const subscription = await getSubscriptionByEmail(sellerEmail);
+    if (subscription?.status !== "active") {
+      return NextResponse.json({ ok: false, error: "Active subscription required." }, { status: 402 });
+    }
 
     const result = await saveMessageReply({
       messageId: id,

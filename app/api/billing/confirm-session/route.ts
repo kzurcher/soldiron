@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getStripeConfig } from "@/lib/stripe";
 import { upsertSubscription } from "@/lib/subscription-store";
+import { setSessionCookie } from "@/lib/session";
+import { getUserProfileByEmail, upsertUserProfile } from "@/lib/user-profile-store";
 
 type StripeCheckoutSession = {
   customer?: string;
@@ -38,6 +40,8 @@ export async function POST(request: Request) {
       session.metadata?.email?.toLowerCase() ??
       "";
     const subscriptionId = session.subscription ?? "";
+    const fullName = session.metadata?.fullName?.trim() ?? "";
+    const phoneNumber = session.metadata?.phoneNumber?.trim() ?? "";
 
     if (!email || !subscriptionId) {
       return NextResponse.json(
@@ -53,8 +57,26 @@ export async function POST(request: Request) {
       status: "active",
       planName: "Sold Iron Subscription",
     });
+    const existingProfile = await getUserProfileByEmail(email);
+    const profile = await upsertUserProfile({
+      email,
+      fullName: fullName || existingProfile?.fullName,
+      phoneNumber: phoneNumber || existingProfile?.phoneNumber,
+    });
+    await setSessionCookie({
+      email,
+      fullName: profile.fullName,
+      phoneNumber: profile.phoneNumber,
+    });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      session: {
+        email,
+        fullName: profile.fullName,
+        phoneNumber: profile.phoneNumber,
+      },
+    });
   } catch {
     return NextResponse.json({ ok: false, error: "Could not confirm session." }, { status: 500 });
   }

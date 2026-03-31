@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 
 export default function SubscribeSuccessPage() {
   const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
-  const [sessionId, setSessionId] = useState("");
 
   useEffect(() => {
     async function confirmSession() {
@@ -15,15 +14,27 @@ export default function SubscribeSuccessPage() {
         setStatus("error");
         return;
       }
-      setSessionId(sessionId);
 
       try {
-        localStorage.setItem("soldiron_checkout_session_id", sessionId);
         const response = await fetch("/api/billing/confirm-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId }),
         });
+        const result = (await response.json()) as {
+          ok?: boolean;
+          session?: { email?: string; fullName?: string; phoneNumber?: string };
+        };
+        if (response.ok && result.ok && result.session?.email) {
+          localStorage.setItem(
+            "soldiron_user_profile",
+            JSON.stringify({
+              email: result.session.email,
+              fullName: result.session.fullName ?? "",
+              phoneNumber: result.session.phoneNumber ?? "",
+            })
+          );
+        }
         setStatus(response.ok ? "ok" : "error");
       } catch {
         setStatus("error");
@@ -47,7 +58,7 @@ export default function SubscribeSuccessPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
-              href={sessionId ? `/list-machine?session_id=${encodeURIComponent(sessionId)}` : "/list-machine"}
+              href="/list-machine"
               className="border border-[var(--line-strong)] bg-[var(--gold)] px-5 py-3 text-xs font-bold uppercase tracking-[0.12em] text-black"
             >
               Post Listing

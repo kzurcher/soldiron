@@ -34,8 +34,8 @@ export default function MessagesPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [subscriberEmail, setSubscriberEmail] = useState("");
 
-  async function loadMessages(email: string) {
-    const response = await fetch(`/api/messages?email=${encodeURIComponent(email)}`);
+  async function loadMessages() {
+    const response = await fetch("/api/messages");
     const result = (await response.json()) as { ok: boolean; messages: MessageRecord[] };
     if (!response.ok || !result.ok) {
       throw new Error("Could not load your messages right now.");
@@ -45,19 +45,13 @@ export default function MessagesPage() {
 
   useEffect(() => {
     async function verifyAndLoadMessages() {
-      const email = (localStorage.getItem("soldiron_subscriber_email") ?? "").toLowerCase();
-      setSubscriberEmail(email);
-
-      if (!email) {
-        setHasAccess(false);
-        setAccessChecked(true);
-        setLoading(false);
-        return;
-      }
-
       try {
-        const statusResponse = await fetch(`/api/billing/status?email=${encodeURIComponent(email)}`);
-        const statusResult = (await statusResponse.json()) as { ok: boolean; active?: boolean };
+        const statusResponse = await fetch("/api/billing/status");
+        const statusResult = (await statusResponse.json()) as {
+          ok: boolean;
+          active?: boolean;
+          session?: { email?: string };
+        };
         if (!statusResponse.ok || !statusResult.ok || !statusResult.active) {
           setHasAccess(false);
           setAccessChecked(true);
@@ -65,6 +59,7 @@ export default function MessagesPage() {
           return;
         }
 
+        setSubscriberEmail(statusResult.session?.email ?? "");
         setHasAccess(true);
         setAccessChecked(true);
       } catch {
@@ -75,7 +70,7 @@ export default function MessagesPage() {
       }
 
       try {
-        await loadMessages(email);
+        await loadMessages();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Could not load your messages right now.";
         setLoadError(message);

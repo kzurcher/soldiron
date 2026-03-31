@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripeConfig, verifyStripeSignature } from "@/lib/stripe";
 import { updateSubscriptionStatusByStripeId, upsertSubscription } from "@/lib/subscription-store";
+import { getUserProfileByEmail, upsertUserProfile } from "@/lib/user-profile-store";
 
 type StripeEvent = {
   type: string;
@@ -44,6 +45,12 @@ export async function POST(request: Request) {
     const email = obj.customer_email ?? obj.customer_details?.email ?? obj.metadata?.email ?? "";
     const subscriptionId = obj.subscription ?? "";
     if (email && subscriptionId) {
+      const existingProfile = await getUserProfileByEmail(email);
+      await upsertUserProfile({
+        email,
+        fullName: obj.metadata?.fullName ?? existingProfile?.fullName,
+        phoneNumber: obj.metadata?.phoneNumber ?? existingProfile?.phoneNumber,
+      });
       await upsertSubscription({
         email,
         stripeCustomerId: obj.customer,

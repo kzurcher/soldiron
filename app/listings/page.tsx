@@ -90,15 +90,7 @@ export default function ListingsPage() {
   useEffect(() => {
     async function verifyAndLoadListings() {
       try {
-        const email = localStorage.getItem("soldiron_subscriber_email") ?? "";
-        if (!email) {
-          setHasAccess(false);
-          setAccessChecked(true);
-          setLoading(false);
-          return;
-        }
-
-        const statusResponse = await fetch(`/api/billing/status?email=${encodeURIComponent(email)}`);
+        const statusResponse = await fetch("/api/billing/status");
         const statusResult = (await statusResponse.json()) as { ok: boolean; active?: boolean };
         if (!statusResponse.ok || !statusResult.ok || !statusResult.active) {
           setHasAccess(false);
