@@ -15,6 +15,26 @@ function getSessionSecret(): string {
   return process.env.SESSION_SECRET ?? process.env.STRIPE_SECRET_KEY ?? "";
 }
 
+function getSessionCookieDomain(): string | undefined {
+  const explicitDomain = process.env.SESSION_COOKIE_DOMAIN?.trim();
+  if (explicitDomain) {
+    return explicitDomain.startsWith(".") ? explicitDomain : `.${explicitDomain}`;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() ?? "";
+  if (!appUrl) return undefined;
+
+  try {
+    const hostname = new URL(appUrl).hostname.toLowerCase();
+    if (hostname === "localhost" || hostname.endsWith(".localhost")) return undefined;
+
+    const rootDomain = hostname.startsWith("www.") ? hostname.slice(4) : hostname;
+    return rootDomain ? `.${rootDomain}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function base64UrlEncode(value: string): string {
   return Buffer.from(value, "utf8").toString("base64url");
 }
@@ -72,6 +92,7 @@ export async function setSessionCookie(input: {
   phoneNumber?: string;
 }): Promise<void> {
   const cookieStore = await cookies();
+  const domain = getSessionCookieDomain();
   const session: AppSession = {
     email: input.email.trim().toLowerCase(),
     fullName: input.fullName?.trim() ?? "",
@@ -83,6 +104,7 @@ export async function setSessionCookie(input: {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
+    domain,
     path: "/",
     maxAge: sessionDurationSeconds,
   });
@@ -90,10 +112,12 @@ export async function setSessionCookie(input: {
 
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
+  const domain = getSessionCookieDomain();
   cookieStore.set(sessionCookieName, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
+    domain,
     path: "/",
     maxAge: 0,
   });
