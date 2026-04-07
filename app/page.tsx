@@ -60,8 +60,8 @@ export default function Home() {
             <Link href="/messages" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Messages
             </Link>
-            <Link href="/subscribe" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
-              Sign Up
+            <Link href="/sign-in" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
+              Sign In
             </Link>
             <Link href="/about" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               About
@@ -97,6 +97,12 @@ export default function Home() {
               </Link>
             </div>
           </details>
+          <Link
+            href="/sign-in"
+            className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
+          >
+            Sign In
+          </Link>
           <Link
             href="/messages"
             className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
