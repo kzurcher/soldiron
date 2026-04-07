@@ -28,6 +28,7 @@ function normalizeStatus(input?: string): "active" | "canceled" | "past_due" | "
 export async function POST(request: Request) {
   const { webhookSecret } = getStripeConfig();
   if (!webhookSecret) {
+    console.error("[billing/webhook] missing webhook secret");
     return NextResponse.json({ ok: false, error: "Missing STRIPE_WEBHOOK_SECRET." }, { status: 500 });
   }
 
@@ -35,11 +36,21 @@ export async function POST(request: Request) {
   const rawBody = await request.text();
 
   if (!verifyStripeSignature(rawBody, signature, webhookSecret)) {
+    console.error("[billing/webhook] invalid signature", {
+      hasSignature: Boolean(signature),
+      webhookSecretPrefix: webhookSecret.slice(0, 8),
+    });
     return NextResponse.json({ ok: false, error: "Invalid signature." }, { status: 400 });
   }
 
   const event = JSON.parse(rawBody) as StripeEvent;
   const obj = event.data.object;
+  console.info("[billing/webhook] received event", {
+    type: event.type,
+    objectId: obj.id ?? "",
+    subscriptionId: obj.subscription ?? obj.id ?? "",
+    email: obj.customer_email ?? obj.customer_details?.email ?? obj.metadata?.email ?? "",
+  });
 
   if (event.type === "checkout.session.completed") {
     const email = obj.customer_email ?? obj.customer_details?.email ?? obj.metadata?.email ?? "";
@@ -58,6 +69,10 @@ export async function POST(request: Request) {
         status: "active",
         planName: "Sold Iron Subscription",
       });
+      console.info("[billing/webhook] activated subscription", {
+        email,
+        subscriptionId,
+      });
     }
   }
 
@@ -65,6 +80,10 @@ export async function POST(request: Request) {
     const stripeSubscriptionId = obj.id ?? "";
     if (stripeSubscriptionId) {
       await updateSubscriptionStatusByStripeId(stripeSubscriptionId, normalizeStatus(obj.status));
+      console.info("[billing/webhook] updated subscription status", {
+        stripeSubscriptionId,
+        status: normalizeStatus(obj.status),
+      });
     }
   }
 

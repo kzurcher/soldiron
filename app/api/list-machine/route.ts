@@ -53,6 +53,7 @@ export async function POST(request: Request) {
   try {
     const session = await getSessionFromCookies();
     if (!session?.email) {
+      console.warn("[list-machine] missing session cookie");
       return NextResponse.json(
         { ok: false, error: "You must be signed in with an active subscription." },
         { status: 401 }
@@ -82,26 +83,45 @@ export async function POST(request: Request) {
     const error = validate(input);
 
     if (error) {
+      console.warn("[list-machine] validation failed", {
+        email: session.email,
+        error,
+      });
       return NextResponse.json({ ok: false, error }, { status: 400 });
     }
 
     const localSub = await getSubscriptionByEmail(input.email);
-    const subscriptionDebug = await getStripeSubscriptionDebug(input.email);
-    const isActive = localSub?.status === "active" || subscriptionDebug.active;
-    if (!isActive) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "An active subscription is required to submit listings.",
-          debug: {
-            email: subscriptionDebug.normalizedEmail,
-            reason: subscriptionDebug.reason,
-            customerCount: subscriptionDebug.customerCount,
-            statuses: subscriptionDebug.statuses,
+    console.info("[list-machine] subscription check", {
+      email: input.email,
+      localStatus: localSub?.status ?? "none",
+      hasStripeSubscriptionId: Boolean(localSub?.stripeSubscriptionId),
+    });
+
+    if (localSub?.status !== "active") {
+      const subscriptionDebug = await getStripeSubscriptionDebug(input.email);
+      console.warn("[list-machine] no active local subscription, stripe fallback result", {
+        email: subscriptionDebug.normalizedEmail,
+        reason: subscriptionDebug.reason,
+        customerCount: subscriptionDebug.customerCount,
+        statuses: subscriptionDebug.statuses,
+      });
+
+      if (!subscriptionDebug.active) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "An active subscription is required to submit listings.",
+            debug: {
+              email: subscriptionDebug.normalizedEmail,
+              reason: subscriptionDebug.reason,
+              customerCount: subscriptionDebug.customerCount,
+              statuses: subscriptionDebug.statuses,
+              localStatus: localSub?.status ?? "none",
+            },
           },
-        },
-        { status: 402 }
-      );
+          { status: 402 }
+        );
+      }
     }
 
     const files = formData
@@ -140,9 +160,18 @@ export async function POST(request: Request) {
     }
 
     const saved = await saveListingSubmission({ ...input, photoPaths });
+    console.info("[list-machine] listing saved", {
+      email: input.email,
+      listingId: saved.id,
+      listingType: saved.listingType,
+      category: saved.category,
+    });
     return NextResponse.json({ ok: true, id: saved.id }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown_error";
+    console.error("[list-machine] unexpected failure", {
+      message,
+    });
     return NextResponse.json(
       { ok: false, error: "Failed to submit listing request.", debug: { message } },
       { status: 500 }
