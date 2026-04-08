@@ -70,7 +70,7 @@ export default function ListMachinePage() {
   useEffect(() => {
     async function hydrateAccess() {
       try {
-        const response = await fetch("/api/billing/status");
+        const response = await fetch("/api/billing/status", { cache: "no-store" });
         const result = (await response.json()) as {
           ok?: boolean;
           active?: boolean;

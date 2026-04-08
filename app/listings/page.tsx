@@ -90,7 +90,7 @@ export default function ListingsPage() {
   useEffect(() => {
     async function verifyAndLoadListings() {
       try {
-        const statusResponse = await fetch("/api/billing/status");
+        const statusResponse = await fetch("/api/billing/status", { cache: "no-store" });
         const statusResult = (await statusResponse.json()) as { ok: boolean; active?: boolean };
         if (!statusResponse.ok || !statusResult.ok || !statusResult.active) {
           setHasAccess(false);

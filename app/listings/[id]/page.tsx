@@ -62,7 +62,7 @@ export default function ListingDetailPage() {
   useEffect(() => {
     async function hydrateProfile() {
       try {
-        const response = await fetch("/api/session");
+        const response = await fetch("/api/session", { cache: "no-store" });
         const result = (await response.json()) as {
           authenticated?: boolean;
           session?: { fullName?: string; phoneNumber?: string; email?: string };
@@ -94,7 +94,7 @@ export default function ListingDetailPage() {
 
     async function verifyAndLoadListing() {
       try {
-        const statusResponse = await fetch("/api/billing/status");
+        const statusResponse = await fetch("/api/billing/status", { cache: "no-store" });
         const statusResult = (await statusResponse.json()) as { ok: boolean; active?: boolean };
         if (!statusResponse.ok || !statusResult.ok || !statusResult.active) {
           setHasAccess(false);

@@ -6,21 +6,32 @@ import { getUserProfileByEmail } from "@/lib/user-profile-store";
 export async function GET() {
   const session = await getSessionFromCookies();
   if (!session) {
-    return NextResponse.json({ ok: false, authenticated: false }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, authenticated: false },
+      {
+        status: 401,
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      }
+    );
   }
 
   const subscription = await getSubscriptionByEmail(session.email);
-  return NextResponse.json({
-    ok: true,
-    authenticated: true,
-    session: {
-      email: session.email,
-      fullName: session.fullName,
-      phoneNumber: session.phoneNumber,
+  return NextResponse.json(
+    {
+      ok: true,
+      authenticated: true,
+      session: {
+        email: session.email,
+        fullName: session.fullName,
+        phoneNumber: session.phoneNumber,
+      },
+      active: subscription?.status === "active",
+      subscription: subscription ?? null,
     },
-    active: subscription?.status === "active",
-    subscription: subscription ?? null,
-  });
+    {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+    }
+  );
 }
 
 export async function POST(request: Request) {
