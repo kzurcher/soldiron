@@ -17,6 +17,14 @@ export const metadata: Metadata = {
   title: "Sold Iron | Industrial Equipment Marketplace",
   description:
     "A bold marketplace to buy and sell heavy equipment with verified listings and direct seller access.",
+  icons: {
+    icon: [
+      { url: "/sold-iron-logo.png", sizes: "32x32", type: "image/png" },
+      { url: "/sold-iron-logo.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/sold-iron-logo.png",
+    apple: "/sold-iron-logo.png",
+  },
 };
 
 export default function RootLayout({
