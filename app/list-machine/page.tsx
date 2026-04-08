@@ -215,12 +215,20 @@ export default function ListMachinePage() {
             <p className="mt-3 text-sm text-[var(--muted)]">
               You need an active subscription before posting listings.
             </p>
-            <Link
-              href="/subscribe"
-              className="mt-6 inline-block border border-[var(--line-strong)] bg-[var(--gold)] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110"
-            >
-              Sign Up
-            </Link>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/sign-in"
+                className="inline-block border border-[var(--line)] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[var(--text)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/subscribe"
+                className="inline-block border border-[var(--line-strong)] bg-[var(--gold)] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110"
+              >
+                Sign Up
+              </Link>
+            </div>
           </section>
         ) : (
         <section className="border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">

@@ -27,7 +27,7 @@ export default function Home() {
             </div>
           </div>
           <nav className="hidden w-[760px] items-center justify-between text-sm font-semibold uppercase tracking-[0.12em] md:flex">
-            <Link href="/subscribe" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
+            <Link href="/list-machine" className="text-[var(--muted)] transition hover:text-[var(--gold)]">
               Post Listing
             </Link>
             <div className="group relative">
@@ -70,7 +70,7 @@ export default function Home() {
         </div>
         <nav className="mx-auto grid max-w-7xl grid-cols-2 gap-2 px-5 pb-4 text-xs font-semibold uppercase tracking-[0.12em] md:hidden">
           <Link
-            href="/subscribe"
+            href="/list-machine"
             className="border border-[var(--line)] px-3 py-2 text-center text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
           >
             Post Listing
@@ -137,7 +137,7 @@ export default function Home() {
                 Browse Equipment
               </Link>
               <Link
-                href="/subscribe"
+                href="/list-machine"
                 className="border border-[var(--line)] bg-transparent px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[var(--text)] transition hover:border-[var(--line-strong)] hover:text-[var(--gold)]"
               >
                 Post Listing
