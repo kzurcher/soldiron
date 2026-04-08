@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function SignInPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
@@ -53,8 +51,8 @@ export default function SignInPage() {
       );
 
       window.setTimeout(() => {
-        router.push(result.active ? "/list-machine" : "/subscribe");
-      }, 500);
+        window.location.href = result.active ? "/list-machine" : "/subscribe";
+      }, 800);
     } catch {
       setStatus("Could not sign in.");
     } finally {
